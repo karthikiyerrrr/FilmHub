@@ -1,0 +1,5 @@
+mlx-whisper
+demucs
+librosa
+pyacoustid
+opencv-python

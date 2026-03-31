@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.venv/bin/python -m filmhub.cut_video*)",
+      "Bash(.venv/bin/python -m filmhub.transcribe*)",
+      "Bash(.venv/bin/python -m filmhub.detect_music*)",
+      "Bash(.venv/bin/python -m filmhub.detect_graphics*)",
+      "Read(analysis/*)",
+      "Read(analysis/*_graphics_frames/*)",
+      "Write(analysis/*)",
+      "Write(output/*)",
+      "Write(output/*_clean_cuts.json)"
+    ]
+  }
+}

@@ -1,0 +1,173 @@
+---
+name: clean-video
+description: Full video cleanup — detect and remove copyrighted music, on-screen promotional graphics, and paid promotions/platform references in a single pass
+user-invocable: true
+---
+
+# Clean Video
+
+Run all three removal passes (music, graphics, promotions) on a video file in a single workflow.
+
+## Conventions
+
+All questions to the user **must** use the `AskUserQuestion` tool. Never ask questions via plain text output — always invoke `AskUserQuestion` so the user gets a proper interactive prompt.
+
+## Inputs
+
+- `$ARGUMENTS` — path to the video file to process
+
+## Steps
+
+### 1. Validate the video file
+
+Confirm that the file at `$ARGUMENTS` exists and has a video extension (.mp4, .mkv, .mov, .avi, .webm). If the path is invalid, tell the user and stop.
+
+### 2. Ask which removal types to run
+
+Present the three removal types and ask the user which to include (default: all three):
+
+1. **Music** — Detect and remove copyrighted music segments (Demucs + AcoustID)
+2. **Graphics** — Detect and remove on-screen promotional/copyrighted graphics (OpenCV + Claude vision)
+3. **Promotions** — Detect and remove paid promotions, sponsorships, and platform references (Whisper transcription + text analysis)
+
+Also ask the user to choose a **review mode** that will apply across all selected removal types:
+
+1. **Review all** — Review every detected segment one by one
+2. **Smart review** — Only review ambiguous segments, auto-remove the rest
+3. **Auto cut** — Automatically remove all detected segments without individual review
+
+### 3. Run detection passes
+
+Run the selected detection scripts. These are independent and can run in sequence:
+
+**If Music is selected:**
+
+```
+.venv/bin/python -m filmhub.detect_music "$ARGUMENTS"
+```
+
+If the user has provided an AcoustID API key (or the `ACOUSTID_API_KEY` env var is set), include it:
+
+```
+.venv/bin/python -m filmhub.detect_music "$ARGUMENTS" --acoustid-key "KEY"
+```
+
+This saves detected music segments to `analysis/<video-name>_music.json`.
+
+**If Graphics is selected:**
+
+```
+.venv/bin/python -m filmhub.detect_graphics "$ARGUMENTS"
+```
+
+This saves candidate frames to `analysis/<video-name>_graphics_frames/` and a manifest to `analysis/<video-name>_graphics_candidates.json`.
+
+**If Promotions is selected:**
+
+```
+.venv/bin/python -m filmhub.transcribe "$ARGUMENTS"
+```
+
+This saves a transcript to `analysis/<video-name>_transcript.json`.
+
+### 4. Analyze and identify segments
+
+**Music segments:** Read `analysis/<video-name>_music.json`. Each segment has `start`, `end` (seconds), and `track` (matched song name or null).
+
+**Graphics segments:** Read `analysis/<video-name>_graphics_candidates.json`. For each candidate transition, read the before/after frame images from `analysis/<video-name>_graphics_frames/`. Process in batches of 5-10 transitions. Classify each using the same criteria as the remove-graphics skill:
+
+- **Flag for removal:** Sponsor logo overlays, product placement overlays, discount code displays, branded end cards, subscribe/follow animations with platform branding, affiliate link displays
+- **Do NOT flag:** Normal scene changes, creator's own branding/watermark, content-relevant graphics, standard video UI elements
+
+Build continuous time ranges from flagged frames: pair appear/disappear transitions, merge frames within 5 seconds.
+
+**Promotion segments:** Read `analysis/<video-name>_transcript.json`. Review every segment's text using the same criteria as the remove-promotions skill:
+
+- **Flag for removal:** Explicit sponsor mentions, product pitches with promotional language, transitions into/out of ad reads, discount codes and referral links, platform references directing viewers to social media, cross-promotion of creator's other channels
+- **Do NOT flag:** Incidental platform mentions as part of content, genuine non-sponsored recommendations
+
+Merge segments within 5 seconds of each other.
+
+### 5. Analyze overlaps across types
+
+Before presenting segments for review, compare all detected segments across types and identify overlaps. Use **conservative merging** — only group segments that are clearly related:
+
+- **Merge** segments from different types if they overlap **and** their time ranges are similar (both start and end within 10 seconds of each other). These are likely the same event detected by multiple methods, so present them as one unified segment noting all contributing types.
+- **Do NOT merge** segments that merely overlap but have very different boundaries (e.g., a 10-second graphics segment that falls within a 3-minute promotions segment). These are likely unrelated detections and should be presented as **separate segments** for independent review, even though their time ranges overlap. Note the overlap for the user's awareness.
+- Segments that don't overlap with any other type remain as single-type entries.
+- Sort the final list by start time.
+
+### 6. Review segments
+
+Present the segment list to the user, applying the chosen review mode. For each segment, show:
+- Timestamps (HH:MM:SS) and duration
+- Which detection types flagged it (e.g., "Detected by: graphics, promotions")
+- Type-specific details for each contributing type (track name for music, description for graphics, transcript text for promotions)
+- For merged multi-type segments, note the individual time ranges from each type
+- For segments that overlap with another segment but were NOT merged (different boundaries), note the overlap and which other segment it partially overlaps with, so the user can make an informed decision
+
+**Review all:** Walk through every segment one by one. Ask whether to **keep**, **remove**, or **adjust boundaries** for each.
+
+**Smart review:** Only present ambiguous segments for review, auto-remove the rest. A segment is ambiguous if any of its contributing types meet these criteria:
+- *Music:* No AcoustID match, segment <10s, or segment >5min
+- *Graphics:* Ambiguous graphic type, segment <3s, or incomplete transition pair
+- *Promotions:* Segment <5s, segment >2min, or ambiguous promotional intent
+
+Segments flagged by multiple types are generally higher confidence and can be auto-removed unless one of the above criteria applies.
+
+**Auto cut:** Show the full list of all segments for informational purposes, then proceed directly to cutting.
+
+### 7. Deduplicate and save the confirmed segments JSON
+
+After review, deduplicate the confirmed segments: if any confirmed segments still overlap (e.g., two separately-reviewed segments that the user both chose to remove), merge their time ranges for the final cut list. Save to `analysis/<video-name>_clean_segments.json`:
+
+```json
+[
+  {"start": 45.0, "end": 92.0, "types": ["promotions"], "description": "Sponsor: NordVPN ad read"},
+  {"start": 120.5, "end": 245.3, "types": ["music"], "description": "Copyrighted track: Artist - Song Title"},
+  {"start": 301.0, "end": 355.0, "types": ["graphics", "promotions"], "description": "Branded end card + platform CTA"}
+]
+```
+
+If no segments remain after review, inform the user and stop.
+
+### 8. Cut the video
+
+Run the cutting script with the confirmed segments:
+
+```
+.venv/bin/python -m filmhub.cut_video "$ARGUMENTS" "analysis/<video-name>_clean_segments.json"
+```
+
+This saves the clean video to `output/<video-name>_clean.<ext>`.
+
+### 9. Save a cut report
+
+Write a summary file to `output/<video-name>_clean_cuts.json` alongside the cut video:
+
+```json
+{
+  "source": "<original video path>",
+  "type": "clean",
+  "removal_types": ["music", "graphics", "promotions"],
+  "review_mode": "smart",
+  "segments_removed": [
+    {"start": 45.0, "end": 92.0, "types": ["promotions"], "description": "Sponsor: NordVPN ad read"},
+    {"start": 120.5, "end": 245.3, "types": ["music"], "description": "Copyrighted track: Artist - Song Title"},
+    {"start": 301.0, "end": 355.0, "types": ["graphics", "promotions"], "description": "Branded end card + platform CTA"}
+  ],
+  "total_removed_seconds": 243.8,
+  "output": "output/<video-name>_clean.<ext>"
+}
+```
+
+### 10. Report results
+
+Tell the user:
+- Which removal types were run
+- How many segments were removed, broken down by type
+- Total time removed
+- Any overlapping segments that were merged (and which types contributed)
+- Where the clean video was saved (`output/`)
+- Where the cut report was saved (`output/`)
+- Where the individual detection files are (`analysis/`)
