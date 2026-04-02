@@ -257,7 +257,9 @@ def process_video(video_path: str, output_dir: str, args: argparse.Namespace) ->
                 results.append({"start": round(s, 2), "end": round(e, 2), "track": None})
 
         # Save results
-        output_path = os.path.join(output_dir, f"{name}_music.json")
+        video_dir = os.path.join(output_dir, name)
+        os.makedirs(video_dir, exist_ok=True)
+        output_path = os.path.join(video_dir, "music.json")
         with open(output_path, "w") as f:
             json.dump(results, f, indent=2)
         print(f"         Results saved to {output_path}")

@@ -30,13 +30,13 @@ Run the graphics detection script to extract candidate transition frames:
 .venv/bin/python -m filmhub.detect_graphics "$ARGUMENTS"
 ```
 
-This saves candidate frames to `analysis/<video-name>_graphics_frames/` and a manifest to `analysis/<video-name>_graphics_candidates.json`.
+This saves candidate frames to `analysis/<video-name>/graphics_frames/` and a manifest to `analysis/<video-name>/graphics_candidates.json`.
 
 If no transitions were detected (empty JSON array), inform the user and stop.
 
 ### 3. Analyze candidate frames with Claude vision
 
-Read the manifest JSON from `analysis/<video-name>_graphics_candidates.json`. For each candidate transition, read both the `before_frame` and `after_frame` images from `analysis/<video-name>_graphics_frames/`.
+Read the manifest JSON from `analysis/<video-name>/graphics_candidates.json`. For each candidate transition, read both the `before_frame` and `after_frame` images from `analysis/<video-name>/graphics_frames/`.
 
 Process frames in batches of 5-10 transitions to manage context. For each transition pair, determine:
 
@@ -69,7 +69,7 @@ Convert the individual flagged frame timestamps into continuous time ranges:
 
 ### 5. Review and save the segments JSON
 
-If no graphics segments are found, write an empty array `[]` to `analysis/<video-name>_graphics.json`, inform the user, and skip step 6.
+If no graphics segments are found, write an empty array `[]` to `analysis/<video-name>/graphics.json`, inform the user, and skip step 6.
 
 Present a summary of what was found (number of segments, total duration) and ask the user to choose a **review mode**:
 
@@ -77,7 +77,7 @@ Present a summary of what was found (number of segments, total duration) and ask
 2. **Smart review** — Only review segments that need human judgment: segments where the graphic type is ambiguous (could be content-relevant vs. promotional), segments shorter than 3 seconds (may be false positives from scene cuts), or segments where only one transition (appear or disappear) was detected (incomplete pair). Auto-remove all other segments (clear sponsor overlays, branded end cards, discount code displays). For each segment presented for review, show timestamps, duration, description, and the frame images, and ask whether to **keep**, **remove**, or **adjust boundaries**.
 3. **Auto cut** — Automatically remove all detected segments without individual review. Simply show the full list of segments with timestamps and descriptions for informational purposes, then proceed directly to cutting.
 
-Write the confirmed segments to `analysis/<video-name>_graphics.json` as a JSON array:
+Write the confirmed segments to `analysis/<video-name>/graphics.json` as a JSON array:
 
 ```json
 [
@@ -91,14 +91,16 @@ Write the confirmed segments to `analysis/<video-name>_graphics.json` as a JSON 
 Run the cutting script to remove the confirmed graphics segments:
 
 ```
-.venv/bin/python -m filmhub.cut_video "$ARGUMENTS" "analysis/<video-name>_graphics.json"
+.venv/bin/python -m filmhub.cut_video "$ARGUMENTS" "analysis/<video-name>/graphics.json"
 ```
 
-This saves the clean video to `output/<video-name>_clean.<ext>`.
+This saves the clean video to `output/<video-name>/clean_NN.<ext>` where `NN` is the next available zero-padded sequence number.
 
 ### 7. Save a cut report
 
-Write a summary file to `output/<video-name>_clean_cuts.json` alongside the cut video. The file should contain:
+Parse the actual output path from `cut_video.py`'s stdout — it appears on the line starting with `Done! Clean video: `. Derive the cut report path by replacing the video extension with `_cuts.json` (e.g. `output/vid_04_test/clean_01.mov` → `output/vid_04_test/clean_01_cuts.json`).
+
+Write the cut report to that path. The file should contain:
 
 ```json
 {
@@ -109,7 +111,7 @@ Write a summary file to `output/<video-name>_clean_cuts.json` alongside the cut 
     {"start": 301.0, "end": 355.0, "description": "Branded end card with discount code"}
   ],
   "total_removed_seconds": 101.0,
-  "output": "output/<video-name>_clean.<ext>"
+  "output": "output/<video-name>/clean_NN.<ext>"
 }
 ```
 

@@ -110,7 +110,9 @@ def process_video(video_path: str, output_dir: str, whisper_model: str) -> None:
     transcript = transcribe(audio_path, whisper_model)
 
     # Save transcript
-    transcript_path = os.path.join(output_dir, f"{name}_transcript.json")
+    video_dir = os.path.join(output_dir, name)
+    os.makedirs(video_dir, exist_ok=True)
+    transcript_path = os.path.join(video_dir, "transcript.json")
     with open(transcript_path, "w") as f:
         json.dump(transcript, f, indent=2)
     print(f"         Transcript saved to {transcript_path}")

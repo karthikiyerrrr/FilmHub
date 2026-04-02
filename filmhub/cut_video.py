@@ -84,7 +84,7 @@ def cut_video(video_path: str, segments: list[dict], output_path: str) -> None:
     part_paths = []
 
     for i, (start, end) in enumerate(keep_intervals):
-        part_path = os.path.join(tmpdir, f"part_{i:04d}.ts")
+        part_path = os.path.join(tmpdir, f"part_{i:04d}.mkv")
         part_paths.append(part_path)
         cmd = [
             "ffmpeg", "-y",
@@ -158,10 +158,14 @@ def main():
         output_path = str(Path(args.output).resolve())
         os.makedirs(Path(output_path).parent, exist_ok=True)
     else:
-        os.makedirs(OUTPUT_DIR, exist_ok=True)
         name = video_path.stem
         ext = video_path.suffix
-        output_path = os.path.join(OUTPUT_DIR, f"{name}_clean{ext}")
+        video_output_dir = os.path.join(OUTPUT_DIR, name)
+        os.makedirs(video_output_dir, exist_ok=True)
+        n = 1
+        while os.path.exists(os.path.join(video_output_dir, f"clean_{n:02d}{ext}")):
+            n += 1
+        output_path = os.path.join(video_output_dir, f"clean_{n:02d}{ext}")
 
     print(f"Video:    {video_path}")
     print(f"Segments: {segments_path} ({len(segments)} to remove)")

@@ -16,6 +16,16 @@ OUTPUT_DIR = os.path.join(_REPO_ROOT, "output")
 SUPPORTED_EXTENSIONS = {".mp4", ".mkv", ".mov", ".avi", ".webm"}
 
 
+def get_video_analysis_dir(video_path: str) -> str:
+    """Return the per-video analysis subdirectory path."""
+    return os.path.join(ANALYSIS_DIR, Path(video_path).stem)
+
+
+def get_video_output_dir(video_path: str) -> str:
+    """Return the per-video output subdirectory path."""
+    return os.path.join(OUTPUT_DIR, Path(video_path).stem)
+
+
 # ---------------------------------------------------------------------------
 # Format helpers
 # ---------------------------------------------------------------------------

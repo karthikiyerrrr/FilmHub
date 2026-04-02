@@ -52,7 +52,7 @@ If the user has provided an AcoustID API key (or the `ACOUSTID_API_KEY` env var 
 .venv/bin/python -m filmhub.detect_music "$ARGUMENTS" --acoustid-key "KEY"
 ```
 
-This saves detected music segments to `analysis/<video-name>_music.json`.
+This saves detected music segments to `analysis/<video-name>/music.json`.
 
 **If Graphics is selected:**
 
@@ -60,7 +60,7 @@ This saves detected music segments to `analysis/<video-name>_music.json`.
 .venv/bin/python -m filmhub.detect_graphics "$ARGUMENTS"
 ```
 
-This saves candidate frames to `analysis/<video-name>_graphics_frames/` and a manifest to `analysis/<video-name>_graphics_candidates.json`.
+This saves candidate frames to `analysis/<video-name>/graphics_frames/` and a manifest to `analysis/<video-name>/graphics_candidates.json`.
 
 **If Promotions is selected:**
 
@@ -68,20 +68,20 @@ This saves candidate frames to `analysis/<video-name>_graphics_frames/` and a ma
 .venv/bin/python -m filmhub.transcribe "$ARGUMENTS"
 ```
 
-This saves a transcript to `analysis/<video-name>_transcript.json`.
+This saves a transcript to `analysis/<video-name>/transcript.json`.
 
 ### 4. Analyze and identify segments
 
-**Music segments:** Read `analysis/<video-name>_music.json`. Each segment has `start`, `end` (seconds), and `track` (matched song name or null).
+**Music segments:** Read `analysis/<video-name>/music.json`. Each segment has `start`, `end` (seconds), and `track` (matched song name or null).
 
-**Graphics segments:** Read `analysis/<video-name>_graphics_candidates.json`. For each candidate transition, read the before/after frame images from `analysis/<video-name>_graphics_frames/`. Process in batches of 5-10 transitions. Classify each using the same criteria as the remove-graphics skill:
+**Graphics segments:** Read `analysis/<video-name>/graphics_candidates.json`. For each candidate transition, read the before/after frame images from `analysis/<video-name>/graphics_frames/`. Process in batches of 5-10 transitions. Classify each using the same criteria as the remove-graphics skill:
 
 - **Flag for removal:** Sponsor logo overlays, product placement overlays, discount code displays, branded end cards, subscribe/follow animations with platform branding, affiliate link displays
 - **Do NOT flag:** Normal scene changes, creator's own branding/watermark, content-relevant graphics, standard video UI elements
 
 Build continuous time ranges from flagged frames: pair appear/disappear transitions, merge frames within 5 seconds.
 
-**Promotion segments:** Read `analysis/<video-name>_transcript.json`. Review every segment's text using the same criteria as the remove-promotions skill:
+**Promotion segments:** Read `analysis/<video-name>/transcript.json`. Review every segment's text using the same criteria as the remove-promotions skill:
 
 - **Flag for removal:** Explicit sponsor mentions, product pitches with promotional language, transitions into/out of ad reads, discount codes and referral links, platform references directing viewers to social media, cross-promotion of creator's other channels
 - **Do NOT flag:** Incidental platform mentions as part of content, genuine non-sponsored recommendations
@@ -119,7 +119,9 @@ Segments flagged by multiple types are generally higher confidence and can be au
 
 ### 7. Deduplicate and save the confirmed segments JSON
 
-After review, deduplicate the confirmed segments: if any confirmed segments still overlap (e.g., two separately-reviewed segments that the user both chose to remove), merge their time ranges for the final cut list. Save to `analysis/<video-name>_clean_segments.json`:
+After review, deduplicate the confirmed segments: if any confirmed segments still overlap (e.g., two separately-reviewed segments that the user both chose to remove), merge their time ranges for the final cut list.
+
+Determine the next sequence number `NN` by scanning `output/<video-name>/` for existing `clean_NN.<ext>` files (e.g., if `clean_01.mov` exists, use `02`). Save to `analysis/<video-name>/clean_NN_segments.json`:
 
 ```json
 [
@@ -136,14 +138,16 @@ If no segments remain after review, inform the user and stop.
 Run the cutting script with the confirmed segments:
 
 ```
-.venv/bin/python -m filmhub.cut_video "$ARGUMENTS" "analysis/<video-name>_clean_segments.json"
+.venv/bin/python -m filmhub.cut_video "$ARGUMENTS" "analysis/<video-name>/clean_NN_segments.json"
 ```
 
-This saves the clean video to `output/<video-name>_clean.<ext>`.
+This saves the clean video to `output/<video-name>/clean_NN.<ext>` where `NN` matches the sequence number used for the segments file.
 
 ### 9. Save a cut report
 
-Write a summary file to `output/<video-name>_clean_cuts.json` alongside the cut video:
+Parse the actual output path from `cut_video.py`'s stdout — it appears on the line starting with `Done! Clean video: `. Derive the cut report path by replacing the video extension with `_cuts.json` (e.g. `output/vid_04_test/clean_01.mov` → `output/vid_04_test/clean_01_cuts.json`).
+
+Write the cut report to that path:
 
 ```json
 {
@@ -157,7 +161,7 @@ Write a summary file to `output/<video-name>_clean_cuts.json` alongside the cut 
     {"start": 301.0, "end": 355.0, "types": ["graphics", "promotions"], "description": "Branded end card + platform CTA"}
   ],
   "total_removed_seconds": 243.8,
-  "output": "output/<video-name>_clean.<ext>"
+  "output": "output/<video-name>/clean_NN.<ext>"
 }
 ```
 

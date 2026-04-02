@@ -137,7 +137,8 @@ def process_video(video_path: str, output_dir: str, args: argparse.Namespace) ->
     print(f"{'='*60}")
 
     tmp_frames_dir = tempfile.mkdtemp(prefix="frames_")
-    candidates_dir = os.path.join(output_dir, f"{name}_graphics_frames")
+    video_dir = os.path.join(output_dir, name)
+    candidates_dir = os.path.join(video_dir, "graphics_frames")
 
     try:
         # Step 1: Extract frames
@@ -162,7 +163,8 @@ def process_video(video_path: str, output_dir: str, args: argparse.Namespace) ->
         if not transitions:
             print("         No visual transitions detected.")
             # Write empty manifest
-            manifest_path = os.path.join(output_dir, f"{name}_graphics_candidates.json")
+            os.makedirs(video_dir, exist_ok=True)
+            manifest_path = os.path.join(video_dir, "graphics_candidates.json")
             with open(manifest_path, "w") as f:
                 json.dump([], f, indent=2)
             print(f"         Empty manifest saved to {manifest_path}")
@@ -192,11 +194,11 @@ def process_video(video_path: str, output_dir: str, args: argparse.Namespace) ->
                 "timestamp": t["timestamp"],
                 "time_formatted": fmt_time(t["timestamp"]),
                 "correlation": t["correlation"],
-                "before_frame": os.path.join(f"{name}_graphics_frames", before_name),
-                "after_frame": os.path.join(f"{name}_graphics_frames", after_name),
+                "before_frame": os.path.join("graphics_frames", before_name),
+                "after_frame": os.path.join("graphics_frames", after_name),
             })
 
-        manifest_path = os.path.join(output_dir, f"{name}_graphics_candidates.json")
+        manifest_path = os.path.join(video_dir, "graphics_candidates.json")
         with open(manifest_path, "w") as f:
             json.dump(manifest, f, indent=2)
         print(f"         Manifest saved to {manifest_path}")

@@ -36,11 +36,11 @@ If the user has provided an AcoustID API key (or the `ACOUSTID_API_KEY` env var 
 .venv/bin/python -m filmhub.detect_music "$ARGUMENTS" --acoustid-key "KEY"
 ```
 
-This saves detected music segments to `analysis/<video-name>_music.json`.
+This saves detected music segments to `analysis/<video-name>/music.json`.
 
 ### 3. Review detected segments
 
-Read the generated music JSON file from `analysis/`. The file contains an array of segments, each with `start`, `end` (in seconds), and `track` (matched song name or null) fields.
+Read the generated music JSON file from `analysis/<video-name>/`. The file contains an array of segments, each with `start`, `end` (in seconds), and `track` (matched song name or null) fields.
 
 If no music segments were detected, inform the user and stop.
 
@@ -52,7 +52,7 @@ Present a summary of what was found (number of segments, total duration) and ask
 
 ### 4. Save the confirmed segments JSON
 
-Based on the review mode results, update `analysis/<video-name>_music.json` with the confirmed segments to remove:
+Based on the review mode results, update `analysis/<video-name>/music.json` with the confirmed segments to remove:
 
 ```json
 [
@@ -68,14 +68,16 @@ If no segments are confirmed for removal, inform the user and stop. Skip step 5.
 Run the cutting script to remove the music segments:
 
 ```
-.venv/bin/python -m filmhub.cut_video "$ARGUMENTS" "analysis/<video-name>_music.json"
+.venv/bin/python -m filmhub.cut_video "$ARGUMENTS" "analysis/<video-name>/music.json"
 ```
 
-This saves the clean video to `output/<video-name>_clean.<ext>`.
+This saves the clean video to `output/<video-name>/clean_NN.<ext>` where `NN` is the next available zero-padded sequence number.
 
 ### 6. Save a cut report
 
-Write a summary file to `output/<video-name>_clean_cuts.json` alongside the cut video. The file should contain:
+Parse the actual output path from `cut_video.py`'s stdout — it appears on the line starting with `Done! Clean video: `. Derive the cut report path by replacing the video extension with `_cuts.json` (e.g. `output/vid_04_test/clean_01.mov` → `output/vid_04_test/clean_01_cuts.json`).
+
+Write the cut report to that path. The file should contain:
 
 ```json
 {
@@ -86,7 +88,7 @@ Write a summary file to `output/<video-name>_clean_cuts.json` alongside the cut 
     {"start": 1803.0, "end": 1920.5, "track": null}
   ],
   "total_removed_seconds": 242.3,
-  "output": "output/<video-name>_clean.<ext>"
+  "output": "output/<video-name>/clean_NN.<ext>"
 }
 ```
 

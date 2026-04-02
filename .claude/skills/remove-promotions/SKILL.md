@@ -30,11 +30,11 @@ Run the transcription script to generate a timestamped transcript:
 .venv/bin/python -m filmhub.transcribe "$ARGUMENTS"
 ```
 
-This saves a transcript JSON file to `analysis/<video-name>_transcript.json`.
+This saves a transcript JSON file to `analysis/<video-name>/transcript.json`.
 
 ### 3. Analyze the transcript for paid promotions
 
-Read the generated transcript JSON file from `analysis/`. The file contains a `segments` array where each segment has `start`, `end` (in seconds), and `text` fields.
+Read the generated transcript JSON file from `analysis/<video-name>/`. The file contains a `segments` array where each segment has `start`, `end` (in seconds), and `text` fields.
 
 Review every segment's text and identify segments that are **paid promotions, sponsorships, ad reads, or platform references**. Look for patterns like:
 
@@ -55,7 +55,7 @@ For each identified promotion segment:
 
 ### 4. Review and save the segments JSON
 
-If no promotions are found, write an empty array `[]` to `analysis/<video-name>_promotions.json`, inform the user, and skip step 5.
+If no promotions are found, write an empty array `[]` to `analysis/<video-name>/promotions.json`, inform the user, and skip step 5.
 
 Present a summary of what was found (number of segments, total duration) and ask the user to choose a **review mode**:
 
@@ -63,7 +63,7 @@ Present a summary of what was found (number of segments, total duration) and ask
 2. **Smart review** — Only review segments that need human judgment: segments shorter than 5 seconds (may be incidental mentions), segments longer than 2 minutes (may include non-promotional content), or segments where the promotional intent is ambiguous (e.g., the creator discussing a product they genuinely use vs. a paid sponsorship). Auto-remove all other segments (clear ad reads, explicit sponsor mentions, obvious platform CTAs). For each segment presented for review, show timestamps, duration, and the transcript text, and ask whether to **keep**, **remove**, or **adjust boundaries**.
 3. **Auto cut** — Automatically remove all detected segments without individual review. Simply show the full list of segments with timestamps and descriptions for informational purposes, then proceed directly to cutting.
 
-Write the confirmed segments to `analysis/<video-name>_promotions.json` as a JSON array:
+Write the confirmed segments to `analysis/<video-name>/promotions.json` as a JSON array:
 
 ```json
 [
@@ -77,14 +77,16 @@ Write the confirmed segments to `analysis/<video-name>_promotions.json` as a JSO
 Run the cutting script to remove the promotion segments:
 
 ```
-.venv/bin/python -m filmhub.cut_video "$ARGUMENTS" "analysis/<video-name>_promotions.json"
+.venv/bin/python -m filmhub.cut_video "$ARGUMENTS" "analysis/<video-name>/promotions.json"
 ```
 
-This saves the clean video to `output/<video-name>_clean.<ext>`.
+This saves the clean video to `output/<video-name>/clean_NN.<ext>` where `NN` is the next available zero-padded sequence number.
 
 ### 6. Save a cut report
 
-Write a summary file to `output/<video-name>_clean_cuts.json` alongside the cut video. The file should contain:
+Parse the actual output path from `cut_video.py`'s stdout — it appears on the line starting with `Done! Clean video: `. Derive the cut report path by replacing the video extension with `_cuts.json` (e.g. `output/vid_04_test/clean_01.mov` → `output/vid_04_test/clean_01_cuts.json`).
+
+Write the cut report to that path. The file should contain:
 
 ```json
 {
@@ -95,7 +97,7 @@ Write a summary file to `output/<video-name>_clean_cuts.json` alongside the cut 
     {"start": 301.0, "end": 355.0, "description": "Platform: YouTube subscribe CTA"}
   ],
   "total_removed_seconds": 101.0,
-  "output": "output/<video-name>_clean.<ext>"
+  "output": "output/<video-name>/clean_NN.<ext>"
 }
 ```
 
