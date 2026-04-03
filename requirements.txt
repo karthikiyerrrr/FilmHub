@@ -1,4 +1,5 @@
 mlx-whisper
+pyannote.audio
 demucs
 librosa
 pyacoustid

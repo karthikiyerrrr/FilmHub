@@ -5,12 +5,17 @@ transcribe.py
 Generates timestamped transcripts from video files using mlx-whisper
 (GPU-accelerated on Apple Silicon via MLX).
 
-Pipeline (current):
+Optionally performs speaker diarization via PyAnnote to label each
+segment with a speaker ID (e.g. SPEAKER_00, SPEAKER_01).
+
+Pipeline:
   1. Extract audio from video using FFmpeg
   2. Transcribe audio using mlx-whisper (with timestamps)
+  3. (Optional) Speaker diarization via PyAnnote
 
 Requirements:
   pip install mlx-whisper
+  pip install pyannote.audio   # only needed with --diarize
   FFmpeg must be installed and available on PATH.
 
 Usage:
@@ -22,6 +27,9 @@ Usage:
 
   # Use a specific Whisper model size
   python -m filmhub.transcribe video.mp4 --whisper-model large
+
+  # Enable speaker diarization (first run requires HF token)
+  python -m filmhub.transcribe video.mp4 --diarize --hf-token YOUR_TOKEN
 """
 
 import argparse
@@ -92,22 +100,41 @@ def transcribe(audio_path: str, model_name: str = "turbo") -> dict:
 # Main
 # ---------------------------------------------------------------------------
 
-def process_video(video_path: str, output_dir: str, whisper_model: str) -> None:
+def process_video(
+    video_path: str,
+    output_dir: str,
+    whisper_model: str,
+    do_diarize: bool = False,
+    hf_token: str | None = None,
+) -> None:
     """Extract audio and generate a timestamped transcript for a single video."""
     name = Path(video_path).stem
+    total_steps = 3 if do_diarize else 2
 
     print(f"\n{'='*60}")
     print(f"Processing: {video_path}")
     print(f"{'='*60}")
 
     # Step 1: Extract audio
-    print("  [1/2] Extracting audio...")
+    print(f"  [1/{total_steps}] Extracting audio...")
     audio_path = os.path.join(tempfile.gettempdir(), f"{name}_audio.wav")
     extract_audio(video_path, audio_path)
 
     # Step 2: Transcribe
-    print("  [2/2] Transcribing with mlx-whisper...")
+    print(f"  [2/{total_steps}] Transcribing with mlx-whisper...")
     transcript = transcribe(audio_path, whisper_model)
+
+    # Step 3 (optional): Speaker diarization
+    if do_diarize:
+        print(f"  [3/{total_steps}] Running speaker diarization (PyAnnote)...")
+        from filmhub.diarize import assign_speakers, diarize, load_pipeline
+
+        pipeline = load_pipeline(hf_token)
+        annotation = diarize(audio_path, pipeline)
+        segments, speakers = assign_speakers(transcript.get("segments", []), annotation)
+        transcript["segments"] = segments
+        transcript["speakers"] = speakers
+        print(f"         Identified {len(speakers)} speaker(s): {', '.join(speakers)}")
 
     # Save transcript
     video_dir = os.path.join(output_dir, name)
@@ -147,6 +174,17 @@ def main():
         help="Whisper model size (default: turbo). Options: tiny, small, medium, large, turbo.",
     )
     parser.add_argument(
+        "--diarize",
+        action="store_true",
+        default=False,
+        help="Enable speaker diarization via PyAnnote (requires pyannote.audio).",
+    )
+    parser.add_argument(
+        "--hf-token",
+        default=None,
+        help="HuggingFace token for downloading PyAnnote model weights (only needed on first run).",
+    )
+    parser.add_argument(
         "--extensions",
         default=".mp4,.mkv,.mov,.avi,.webm",
         help="Comma-separated video file extensions to process (default: .mp4,.mkv,.mov,.avi,.webm).",
@@ -167,10 +205,12 @@ def main():
 
     print(f"Found {len(videos)} video(s) to process.")
     print(f"Whisper model: {args.whisper_model}")
+    if args.diarize:
+        print("Speaker diarization: enabled")
     print(f"Transcripts will be saved to: {output_dir}")
 
     for v in videos:
-        process_video(v, output_dir, args.whisper_model)
+        process_video(v, output_dir, args.whisper_model, args.diarize, args.hf_token)
 
     print(f"\nAll done! Transcripts are in: {output_dir}")
 

@@ -66,9 +66,10 @@ This saves candidate frames to `analysis/<video-name>/graphics_frames/` and a ma
 
 ```
 .venv/bin/python -m filmhub.transcribe "$ARGUMENTS"
+.venv/bin/python -m filmhub.convert_transcript "$ARGUMENTS"
 ```
 
-This saves a transcript to `analysis/<video-name>/transcript.json`.
+This saves a transcript to `analysis/<video-name>/transcript.json` and a compact text version to `analysis/<video-name>/transcript.txt`.
 
 ### 4. Analyze and identify segments
 
@@ -81,12 +82,24 @@ This saves a transcript to `analysis/<video-name>/transcript.json`.
 
 Build continuous time ranges from flagged frames: pair appear/disappear transitions, merge frames within 5 seconds.
 
-**Promotion segments:** Read `analysis/<video-name>/transcript.json`. Review every segment's text using the same criteria as the remove-promotions skill:
+**Promotion segments:** Ask the user which model to use for transcript analysis:
+
+1. **Opus** — most accurate, best for ambiguous or subtle promotions
+2. **Sonnet** — good balance of speed and accuracy (default)
+3. **Haiku** — fastest and cheapest, best for obvious ad reads
+
+Read `analysis/<video-name>/transcript.txt`. Each line has the format `SPEAKER    HH:MM:SS - HH:MM:SS    text` (the speaker column may be absent if diarization wasn't used).
+
+If the transcript has **≤50 lines**, use it as a single chunk. Otherwise, split into chunks targeting ~50 lines each, splitting at natural break points (time gaps >10 seconds or speaker changes), with **5 lines of overlap** between adjacent chunks.
+
+Launch one `Agent` subagent per chunk **in a single message** (parallel), using the model the user selected. Each subagent receives its chunk and the following detection criteria:
 
 - **Flag for removal:** Explicit sponsor mentions, product pitches with promotional language, transitions into/out of ad reads, discount codes and referral links, platform references directing viewers to social media, cross-promotion of creator's other channels
 - **Do NOT flag:** Incidental platform mentions as part of content, genuine non-sponsored recommendations
 
-Merge segments within 5 seconds of each other.
+Each subagent returns a JSON array of `{"start": "HH:MM:SS", "end": "HH:MM:SS", "description": "brief reason"}`. If none found, return `[]`.
+
+After all subagents return, reconcile: deduplicate detections from overlap zones (start/end within 3 seconds), merge segments within 5 seconds of each other, and sort by start time.
 
 ### 5. Analyze overlaps across types
 
