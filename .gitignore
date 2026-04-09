@@ -18,6 +18,11 @@ analysis/*
 output/*
 !output/.gitkeep
 
+# Reviewer app build artifacts
+reviewer/target/
+reviewer/frontend/node_modules/
+reviewer/frontend/dist/
+
 # OS
 .DS_Store
 Thumbs.db
