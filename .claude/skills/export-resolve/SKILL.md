@@ -25,7 +25,6 @@ Export confirmed segments as timeline markers in DaVinci Resolve so the user can
 Give the user the exact command to run themselves:
 
 ```
-cd /Users/hippolord/Documents/GitHub/FilmHub
 .venv/bin/python -m filmhub.export_resolve "<segments-json>"
 ```
 
