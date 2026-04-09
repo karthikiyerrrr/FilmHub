@@ -42,7 +42,11 @@ Run the conversion script to generate a lightweight text transcript:
 
 This saves `analysis/<video-name>/transcript.txt` — a compact format with one line per segment containing only the speaker label, timestamps, and text.
 
-### 4. Choose analysis model
+### 4. Load prior feedback
+
+Before running any classification, check if `.claude/rules/feedback.json` exists and read it. Extract entries where `"type": "promotions"` — these are lessons from previous runs that the classifier must apply. They will be injected into classification prompts in the next step.
+
+### 5. Choose analysis model
 
 Ask the user which model to use for transcript analysis:
 
@@ -52,11 +56,11 @@ Ask the user which model to use for transcript analysis:
 
 Map the selection to the `model` parameter for the `Agent` tool: `"opus"`, `"sonnet"`, or `"haiku"`.
 
-### 5. Analyze the transcript for paid promotions
+### 6. Analyze the transcript for paid promotions
 
 Read the generated `transcript.txt` file from `analysis/<video-name>/`. Each line has the format `SPEAKER    HH:MM:SS - HH:MM:SS    text` (the speaker column may be absent if diarization wasn't used).
 
-#### 5a. Chunk the transcript
+#### 6a. Chunk the transcript
 
 If the transcript has **≤50 lines**, use it as a single chunk. Otherwise, split it into chunks:
 
@@ -64,7 +68,7 @@ If the transcript has **≤50 lines**, use it as a single chunk. Otherwise, spli
 - Split at **natural break points**: time gaps >10 seconds between consecutive segments, or speaker changes. Never split in the middle of a continuous block of speech.
 - Add **5 lines of overlap** between adjacent chunks (the last 5 lines of chunk N are repeated as the first 5 lines of chunk N+1). This ensures promotions near boundaries are not missed.
 
-#### 5b. Launch subagents in parallel
+#### 6b. Launch subagents in parallel
 
 Launch one `Agent` subagent per chunk **in a single message** (so they run in parallel), using the model the user selected in step 4. Each subagent's prompt must include:
 
@@ -79,14 +83,19 @@ Launch one `Agent` subagent per chunk **in a single message** (so they run in pa
 > - Discount codes, referral links, or calls to action for a sponsor's product
 > - **Platform references** — mentions of YouTube, Twitch, TikTok, Instagram, Twitter/X, Facebook, Snapchat, Patreon, Discord, or other social media platforms when the creator is directing viewers there (e.g., "Subscribe to my YouTube", "Follow me on Twitch", "Check out my TikTok", "Join my Discord")
 > - Cross-promotion of the creator's other channels or social accounts
+> - Event appearance CTAs with ticket purchase encouragement
+> - Video-specific CTAs (e.g. "if this video hits X likes I will...", "subscribe so you don't miss...", like/subscribe goals tied to the current video, "check out this video right here" end-of-video redirects)
 >
 > **Do NOT flag:**
 > - Passing/incidental mentions of a platform as part of the video's actual content (e.g., discussing a TikTok trend, reacting to a YouTube video)
 > - Genuine product recommendations that aren't sponsored
+> - Casual "comment below" engagement prompts that are not tied to a specific metric or milestone
+
+If there are any `promotions` entries loaded from `.claude/rules/feedback.json`, include them in each subagent prompt as a **Lessons from prior runs** section with one bullet per lesson.
 
 - Instruction to return **only** a JSON array of detected segments, where each entry is `{"start": "HH:MM:SS", "end": "HH:MM:SS", "description": "brief reason"}`. If no promotions are found, return `[]`.
 
-#### 5c. Reconcile results
+#### 6c. Reconcile results
 
 After all subagents return:
 
@@ -95,9 +104,9 @@ After all subagents return:
 3. **Merge** segments that are within 5 seconds of each other into a single range
 4. **Sort** the final list by start time
 
-### 6. Review and save the segments JSON
+### 7. Review and save the segments JSON
 
-If no promotions are found, write an empty array `[]` to `analysis/<video-name>/promotions.json`, inform the user, and skip step 7.
+If no promotions are found, write an empty array `[]` to `analysis/<video-name>/promotions.json`, inform the user, and skip step 8.
 
 Present a summary of what was found (number of segments, total duration) and ask the user to choose a **review mode**:
 
@@ -114,7 +123,7 @@ Write the confirmed segments to `analysis/<video-name>/promotions.json` as a JSO
 ]
 ```
 
-### 7. Cut the video
+### 8. Cut the video
 
 Run the cutting script to remove the promotion segments:
 
@@ -124,7 +133,7 @@ Run the cutting script to remove the promotion segments:
 
 This saves the clean video to `output/<video-name>/clean_NN.<ext>` where `NN` is the next available zero-padded sequence number.
 
-### 8. Save a cut report
+### 9. Save a cut report
 
 Parse the actual output path from `cut_video.py`'s stdout — it appears on the line starting with `Done! Clean video: `. Derive the cut report path by replacing the video extension with `_cuts.json` (e.g. `output/vid_04_test/clean_01.mov` → `output/vid_04_test/clean_01_cuts.json`).
 
@@ -145,7 +154,7 @@ Write the cut report to that path. The file should contain:
 
 Each entry in `segments_removed` should include `start`, `end`, and a brief `description` of why it was cut (sponsor name, platform reference, etc.).
 
-### 9. Report results
+### 10. Report results
 
 Tell the user:
 - How many promotion segments were found and their timestamps

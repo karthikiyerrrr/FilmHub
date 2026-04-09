@@ -34,7 +34,11 @@ This saves candidate frames to `analysis/<video-name>/graphics_frames/` and a ma
 
 If no transitions were detected (empty JSON array), inform the user and stop.
 
-### 3. Analyze candidate frames with Claude vision
+### 3. Load prior feedback
+
+Before running any classification, check if `.claude/rules/feedback.json` exists and read it. Extract entries where `"type": "graphics"` — these are lessons from previous runs that the classifier must apply. They will be injected into classification prompts in the next step.
+
+### 4. Analyze candidate frames with Claude vision
 
 Read the manifest JSON from `analysis/<video-name>/graphics_candidates.json`. For each candidate transition, read both the `before_frame` and `after_frame` images from `analysis/<video-name>/graphics_frames/`.
 
@@ -57,9 +61,12 @@ Process frames in batches of 5-10 transitions to manage context. For each transi
 - Content-relevant graphics (charts, diagrams, illustrations that are part of the video's topic)
 - Standard video UI elements (progress bars, captions, subtitles)
 
+If there are any `graphics` entries loaded from `.claude/rules/feedback.json`, append a **Lessons from prior runs** section to each graphics classification batch prompt, listing each lesson as a bullet. Example format:
+> - Do NOT describe caption text (e.g. "FOOTAGE FROM X'S VIDEO") as social media handle lower-thirds — that is a content attribution graphic, not promotional
+
 For each flagged transition, note the timestamp and a brief description of what was detected.
 
-### 4. Build segment ranges
+### 5. Build segment ranges
 
 Convert the individual flagged frame timestamps into continuous time ranges:
 
@@ -67,9 +74,9 @@ Convert the individual flagged frame timestamps into continuous time ranges:
 - If consecutive flagged frames are within 5 seconds of each other, merge them into a single segment
 - Ensure segments don't extend beyond 0 or the video duration
 
-### 5. Review and save the segments JSON
+### 6. Review and save the segments JSON
 
-If no graphics segments are found, write an empty array `[]` to `analysis/<video-name>/graphics.json`, inform the user, and skip step 6.
+If no graphics segments are found, write an empty array `[]` to `analysis/<video-name>/graphics.json`, inform the user, and skip step 7.
 
 Present a summary of what was found (number of segments, total duration) and ask the user to choose a **review mode**:
 
@@ -86,7 +93,7 @@ Write the confirmed segments to `analysis/<video-name>/graphics.json` as a JSON 
 ]
 ```
 
-### 6. Cut the video
+### 7. Cut the video
 
 Run the cutting script to remove the confirmed graphics segments:
 
@@ -96,7 +103,7 @@ Run the cutting script to remove the confirmed graphics segments:
 
 This saves the clean video to `output/<video-name>/clean_NN.<ext>` where `NN` is the next available zero-padded sequence number.
 
-### 7. Save a cut report
+### 8. Save a cut report
 
 Parse the actual output path from `cut_video.py`'s stdout — it appears on the line starting with `Done! Clean video: `. Derive the cut report path by replacing the video extension with `_cuts.json` (e.g. `output/vid_04_test/clean_01.mov` → `output/vid_04_test/clean_01_cuts.json`).
 
@@ -117,7 +124,7 @@ Write the cut report to that path. The file should contain:
 
 Each entry in `segments_removed` should include `start`, `end`, and a brief `description` of the graphic that was detected.
 
-### 8. Report results
+### 9. Report results
 
 Tell the user:
 - How many graphics segments were removed and their timestamps

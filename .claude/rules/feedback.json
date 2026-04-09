@@ -1,0 +1,65 @@
+[
+  {
+    "date": "2026-04-02",
+    "video": "Taylor_test_1.mp4",
+    "type": "graphics",
+    "issue": "false_positive",
+    "lesson": "Do NOT describe a content attribution caption (e.g. 'FOOTAGE FROM SCARLETT AND SHOTZI'S VIDEO' displayed at the bottom of the frame) as social media handle lower-thirds or promotional branding — it is a source credit, not a promotion, and should NOT be flagged."
+  },
+  {
+    "date": "2026-04-02",
+    "video": "Taylor_test_1.mp4",
+    "type": "graphics",
+    "issue": "false_positive",
+    "lesson": "Do NOT hallucinate specific social media handle text (e.g. platform usernames, @handles) that is not clearly visible in the frame. If the lower-third text is ambiguous or partially obscured, describe only what is clearly visible and default to NOT flagging."
+  },
+  {
+    "date": "2026-04-03",
+    "video": "taylortest2.mp4",
+    "type": "graphics",
+    "issue": "false_negative",
+    "lesson": "DO flag hard cuts to a black screen displaying 'CHECK OUT THESE VIDEOS' or similar end-card text with channel branding (icons, logos, decorative elements). These appear at the very end of the video and are always promotional — flag them for removal even if the screen is mostly dark."
+  },
+  {
+    "date": "2026-04-03",
+    "video": "taylortest2.mp4",
+    "type": "graphics",
+    "issue": "false_negative",
+    "lesson": "DO flag intro lower-third overlays that appear in the first 2 minutes of the video and display the creator's social media handles (Snapchat, TikTok, Instagram, etc.) with platform icons. These are platform CTAs directing viewers to follow the creator and should be flagged for removal."
+  },
+  {
+    "date": "2026-04-03",
+    "video": "taylortest3.mp4",
+    "type": "graphics",
+    "issue": "false_positive",
+    "lesson": "Do NOT flag the creator's own branded intro card or channel title card (e.g. 'Kelsi Davies KD' logo appearing at the start of the video) as a social media lower-third — it is the creator's channel branding/watermark, not a platform CTA, and should NOT be flagged."
+  },
+  {
+    "date": "2026-04-03",
+    "video": "taylortest3.mp4",
+    "type": "graphics",
+    "issue": "false_positive",
+    "lesson": "Do NOT flag stylistic hard cuts to atmospheric or cinematic content scenes (e.g. a robed figure with glowing orbs, horror imagery) as promotional graphics — if uncertain whether a dark/dramatic scene is an end card or content, default to NOT flagging unless 'CHECK OUT THESE VIDEOS' or clear branded outro elements are visible."
+  },
+  {
+    "date": "2026-04-03",
+    "video": "taylortest3.mp4",
+    "type": "graphics",
+    "issue": "false_negative",
+    "lesson": "DO flag social media handle lower-thirds that appear as early as 0:46 in the video, not just around 0:55. Scan the full first 2 minutes carefully for any lower-third overlays with platform icons (TikTok, Instagram, Snapchat, YouTube) displaying the creator's handles."
+  },
+  {
+    "date": "2026-04-03",
+    "video": "taylortest3.mp4",
+    "type": "promotions",
+    "issue": "false_negative",
+    "lesson": "DO flag self-promotion segments near the end of the video where the creator promotes their own content with like/subscribe goals (e.g. 'if this video hits 5,000 likes I will make more', 'my previous video hit 10,000 likes so I am working on short films'). These are engagement-driven CTAs specific to the video and should be flagged."
+  },
+  {
+    "date": "2026-04-03",
+    "video": "taylortest3.mp4",
+    "type": "promotions",
+    "issue": "false_negative",
+    "lesson": "DO flag any specific call-to-action tied to the current video's performance — like goals, subscribe milestones, engagement prompts that reference a specific number of likes/views, or 'check out this video right here' end-of-video CTAs. These are promotional even if no third-party sponsor is involved."
+  }
+]

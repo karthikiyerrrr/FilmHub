@@ -75,31 +75,9 @@ This saves a transcript to `analysis/<video-name>/transcript.json` and a compact
 
 **Music segments:** Read `analysis/<video-name>/music.json`. Each segment has `start`, `end` (seconds), and `track` (matched song name or null).
 
-**Graphics segments:** Read `analysis/<video-name>/graphics_candidates.json`. For each candidate transition, read the before/after frame images from `analysis/<video-name>/graphics_frames/`. Process in batches of 5-10 transitions. Classify each using the same criteria as the remove-graphics skill:
+**Graphics segments:** Follow the analysis steps from the **remove-graphics** skill (steps 3–5: load prior feedback, analyze candidate frames with Claude vision, build segment ranges). Use `analysis/<video-name>/graphics_candidates.json` and `analysis/<video-name>/graphics_frames/` as inputs.
 
-- **Flag for removal:** Sponsor logo overlays, product placement overlays, discount code displays, branded end cards, subscribe/follow animations with platform branding, affiliate link displays
-- **Do NOT flag:** Normal scene changes, creator's own branding/watermark, content-relevant graphics, standard video UI elements
-
-Build continuous time ranges from flagged frames: pair appear/disappear transitions, merge frames within 5 seconds.
-
-**Promotion segments:** Ask the user which model to use for transcript analysis:
-
-1. **Opus** — most accurate, best for ambiguous or subtle promotions
-2. **Sonnet** — good balance of speed and accuracy (default)
-3. **Haiku** — fastest and cheapest, best for obvious ad reads
-
-Read `analysis/<video-name>/transcript.txt`. Each line has the format `SPEAKER    HH:MM:SS - HH:MM:SS    text` (the speaker column may be absent if diarization wasn't used).
-
-If the transcript has **≤50 lines**, use it as a single chunk. Otherwise, split into chunks targeting ~50 lines each, splitting at natural break points (time gaps >10 seconds or speaker changes), with **5 lines of overlap** between adjacent chunks.
-
-Launch one `Agent` subagent per chunk **in a single message** (parallel), using the model the user selected. Each subagent receives its chunk and the following detection criteria:
-
-- **Flag for removal:** Explicit sponsor mentions, product pitches with promotional language, transitions into/out of ad reads, discount codes and referral links, platform references directing viewers to social media, cross-promotion of creator's other channels
-- **Do NOT flag:** Incidental platform mentions as part of content, genuine non-sponsored recommendations
-
-Each subagent returns a JSON array of `{"start": "HH:MM:SS", "end": "HH:MM:SS", "description": "brief reason"}`. If none found, return `[]`.
-
-After all subagents return, reconcile: deduplicate detections from overlap zones (start/end within 3 seconds), merge segments within 5 seconds of each other, and sort by start time.
+**Promotion segments:** Follow the analysis steps from the **remove-promotions** skill (steps 4–6: load prior feedback, choose analysis model, analyze transcript). Use `analysis/<video-name>/transcript.txt` as input.
 
 ### 5. Analyze overlaps across types
 
@@ -146,7 +124,11 @@ Determine the next sequence number `NN` by scanning `output/<video-name>/` for e
 
 If no segments remain after review, inform the user and stop.
 
-### 8. Cut the video
+### 8. Export markers to DaVinci Resolve
+
+Before cutting, follow the **export-resolve** skill steps using `analysis/<video-name>/clean_NN_segments.json` as the segments file.
+
+### 9. Cut the video
 
 Run the cutting script with the confirmed segments:
 
@@ -156,7 +138,7 @@ Run the cutting script with the confirmed segments:
 
 This saves the clean video to `output/<video-name>/clean_NN.<ext>` where `NN` matches the sequence number used for the segments file.
 
-### 9. Save a cut report
+### 10. Save a cut report
 
 Parse the actual output path from `cut_video.py`'s stdout — it appears on the line starting with `Done! Clean video: `. Derive the cut report path by replacing the video extension with `_cuts.json` (e.g. `output/vid_04_test/clean_01.mov` → `output/vid_04_test/clean_01_cuts.json`).
 
@@ -178,7 +160,7 @@ Write the cut report to that path:
 }
 ```
 
-### 10. Report results
+### 11. Report results
 
 Tell the user:
 - Which removal types were run
@@ -188,3 +170,7 @@ Tell the user:
 - Where the clean video was saved (`output/`)
 - Where the cut report was saved (`output/`)
 - Where the individual detection files are (`analysis/`)
+
+### 12. Collect feedback
+
+Follow the **collect-feedback** skill steps to gather false positive/negative feedback from the user and save lessons to `.claude/rules/feedback.json`.

@@ -10,6 +10,7 @@ Automatically removes paid promotions and sponsorship segments from video files.
   - `diarize.py` — Speaker diarization using PyAnnote; aligns speaker labels with Whisper segments via temporal overlap
   - `detect_music.py` — Detects copyrighted music segments using Demucs source separation, librosa energy analysis, and AcoustID fingerprinting
   - `detect_graphics.py` — Detects on-screen graphics transitions using OpenCV frame-by-frame histogram comparison
+  - `export_resolve.py` — Exports confirmed segments as color-coded markers to a DaVinci Resolve timeline
   - `cut_video.py` — Removes specified time segments from a video using FFmpeg (no re-encoding)
 - `videos/` — Input directory for original video files
 - `analysis/` — Output directory for all detection and analysis results (transcripts, music segments, graphics candidates, etc.)
