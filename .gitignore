@@ -26,3 +26,13 @@ reviewer/frontend/dist/
 # OS
 .DS_Store
 Thumbs.db
+service-account.json
+
+# Gweebler runtime
+frontend/.env.local
+api/.env.local
+worker/.env.local
+frontend/dist/
+api/dist/
+worker/dist/
+node_modules/
