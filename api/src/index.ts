@@ -2,6 +2,8 @@ import express from 'express'
 import cors from 'cors'
 import admin from 'firebase-admin'
 import { authMiddleware } from './middleware/auth.js'
+import uploadRouter from './routes/upload.js'
+import videosRouter from './routes/videos.js'
 
 admin.initializeApp({
   credential: admin.credential.applicationDefault(),
@@ -19,7 +21,8 @@ app.get('/health', (_req, res) => {
 // All /api routes require auth
 app.use('/api', authMiddleware)
 
-// Routes will be added in later tasks
+app.use('/api', uploadRouter)
+app.use('/api', videosRouter)
 
 const PORT = parseInt(process.env.PORT || '8080')
 app.listen(PORT, () => {
