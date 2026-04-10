@@ -10,6 +10,7 @@ Automatically removes paid promotions and sponsorship segments from video files.
   - `diarize.py` — Speaker diarization using PyAnnote; aligns speaker labels with Whisper segments via temporal overlap
   - `detect_music.py` — Detects copyrighted music segments using Demucs source separation, librosa energy analysis, and AcoustID fingerprinting
   - `detect_graphics.py` — Detects on-screen graphics transitions using OpenCV frame-by-frame histogram comparison
+  - `convert_transcript.py` — Converts transcript JSON to lightweight text format for promotion detection (strips Whisper metadata, keeps speaker/timestamps/text)
   - `export_resolve.py` — Exports confirmed segments as color-coded markers to a DaVinci Resolve timeline
   - `cut_video.py` — Removes specified time segments from a video using FFmpeg (no re-encoding)
 - `reviewer/` — Webapp for visual segment review (Rust/Axum backend + React/Vite frontend)
@@ -33,6 +34,52 @@ Automatically removes paid promotions and sponsorship segments from video files.
 - FFmpeg / ffprobe — audio extraction and lossless video cutting
 - [Axum](https://github.com/tokio-rs/axum) — Rust async web framework for the reviewer backend
 - React 19 + Vite + Tailwind CSS v4 — reviewer frontend
+
+## Prerequisites
+
+- Python 3 with packages from `requirements.txt` (`pip install -r requirements.txt`)
+- FFmpeg and ffprobe on PATH
+- [Chromaprint](https://github.com/acoustid/chromaprint) (`fpcalc`) on PATH — required by pyacoustid for audio fingerprinting
+- HuggingFace token (one-time) — required for PyAnnote speaker diarization model access; set `HF_TOKEN` env var or authenticate via `huggingface-cli login`
+- Rust toolchain — for building the reviewer backend
+- Node.js — for building the reviewer frontend
+
+## Commands
+
+### Python pipeline
+
+```bash
+# Transcribe a video (generates JSON in analysis/)
+python -m filmhub.transcribe videos/example.mp4
+
+# Convert transcript to readable text format
+python -m filmhub.convert_transcript videos/example.mp4
+
+# Detect copyrighted music segments
+python -m filmhub.detect_music videos/example.mp4
+
+# Detect on-screen graphics transitions
+python -m filmhub.detect_graphics videos/example.mp4
+
+# Cut detected segments from video
+python -m filmhub.cut_video videos/example.mp4
+```
+
+### Reviewer webapp
+
+```bash
+# Build frontend + backend
+cd reviewer/frontend && npm install && npm run build && cd .. && cargo build --release
+
+# Run (serves on http://localhost:3456)
+reviewer/target/release/reviewer --project-root /path/to/FilmHub --port 3456
+
+# Frontend dev server (hot reload, proxies to backend)
+cd reviewer/frontend && npm run dev
+
+# Lint frontend
+cd reviewer/frontend && npm run lint
+```
 
 ## Reviewer security (local-only for now)
 
