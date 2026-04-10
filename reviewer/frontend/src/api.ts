@@ -7,7 +7,7 @@ export async function fetchVideos(): Promise<VideoInfo[]> {
 }
 
 export async function fetchAnalysis(video: string): Promise<ReviewData> {
-  const res = await fetch(`/api/analysis/${video}`);
+  const res = await fetch(`/api/analysis/${encodeURIComponent(video)}`);
   if (!res.ok) throw new Error('Failed to fetch analysis data');
   return res.json();
 }
@@ -16,7 +16,7 @@ export async function saveSegments(
   video: string,
   segments: Omit<CleanSegment, 'accepted'>[]
 ): Promise<SaveResult> {
-  const res = await fetch(`/api/segments/${video}`, {
+  const res = await fetch(`/api/segments/${encodeURIComponent(video)}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(segments),
@@ -42,7 +42,7 @@ export async function startCut(
   video: string,
   segmentsFile: string
 ): Promise<void> {
-  const res = await fetch(`/api/cut/${video}`, {
+  const res = await fetch(`/api/cut/${encodeURIComponent(video)}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ segments_file: segmentsFile }),
@@ -51,12 +51,12 @@ export async function startCut(
 }
 
 export async function getCutStatus(video: string): Promise<CutStatus> {
-  const res = await fetch(`/api/cut/${video}/status`);
+  const res = await fetch(`/api/cut/${encodeURIComponent(video)}/status`);
   if (!res.ok) throw new Error('Failed to get cut status');
   return res.json();
 }
 
 export function frameUrl(video: string, framePath: string): string {
   const filename = framePath.split('/').pop() || framePath;
-  return `/api/analysis/${video}/frames/${filename}`;
+  return `/api/analysis/${encodeURIComponent(video)}/frames/${encodeURIComponent(filename)}`;
 }
