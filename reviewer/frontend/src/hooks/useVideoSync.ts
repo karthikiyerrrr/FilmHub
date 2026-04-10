@@ -5,6 +5,7 @@ export function useVideoSync() {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [fps, setFps] = useState(30);
   const rafRef = useRef<number>(0);
 
   const updateTime = useCallback(() => {
@@ -63,6 +64,8 @@ export function useVideoSync() {
     currentTime,
     duration,
     isPlaying,
+    fps,
+    setFps,
     seek,
     play,
     pause,

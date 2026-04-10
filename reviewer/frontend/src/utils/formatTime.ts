@@ -21,6 +21,23 @@ export function formatTimePrecise(seconds: number): string {
   return `${m}:${s.toFixed(1).padStart(4, '0')}`;
 }
 
+export function formatTimeFrames(seconds: number, fps: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  const f = Math.floor((seconds % 1) * fps);
+  return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}:${String(f).padStart(2, '0')}`;
+}
+
+export function parseTimeFrames(str: string, fps: number): number | null {
+  const parts = str.split(':').map(Number);
+  if (parts.some(isNaN)) return null;
+  if (parts.length === 4) return parts[0] * 3600 + parts[1] * 60 + parts[2] + parts[3] / fps;
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  return null;
+}
+
 export function parseTime(str: string): number | null {
   const parts = str.split(':').map(Number);
   if (parts.some(isNaN)) return null;

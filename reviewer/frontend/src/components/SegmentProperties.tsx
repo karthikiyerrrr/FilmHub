@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { CleanSegment, ReviewData, SegmentType, TranscriptSegment } from '../types';
 import { frameUrl } from '../api';
-import { formatTime, formatTimeFull, parseTime } from '../utils/formatTime';
+import { formatTime, formatTimeFrames, parseTime, parseTimeFrames } from '../utils/formatTime';
 
 const TYPE_BADGE: Record<string, { bg: string; text: string; border: string }> = {
   music: { bg: 'bg-blue-500/15', text: 'text-blue-400', border: 'border-blue-500' },
@@ -39,6 +39,7 @@ interface Props {
   onSeek: (time: number) => void;
   onAdd: (seg: { start: number; end: number; types: SegmentType[]; description: string }) => void;
   onRemove: (index: number) => void;
+  fps: number;
 }
 
 export default function SegmentProperties({
@@ -56,6 +57,7 @@ export default function SegmentProperties({
   onSeek,
   onAdd,
   onRemove,
+  fps,
 }: Props) {
   const seg = selectedIndex !== null ? segments[selectedIndex] : null;
 
@@ -78,6 +80,7 @@ export default function SegmentProperties({
           onRemove(selectedIndex);
           onSelect(null);
         }}
+        fps={fps}
       />
     );
   }
@@ -86,7 +89,9 @@ export default function SegmentProperties({
     <SegmentSummary
       segments={segments}
       onSelect={onSelect}
+      onSeek={onSeek}
       onAdd={onAdd}
+      fps={fps}
     />
   );
 }
@@ -105,6 +110,7 @@ function SegmentEditor({
   onSplit,
   onSeek,
   onRemove,
+  fps,
 }: {
   index: number;
   seg: CleanSegment;
@@ -119,6 +125,7 @@ function SegmentEditor({
   onSplit: () => void;
   onSeek: (time: number) => void;
   onRemove: () => void;
+  fps: number;
 }) {
   const canSplit = currentTime > seg.start + 0.5 && currentTime < seg.end - 0.5;
   const transcript = seg.types.includes('promotions')
@@ -160,7 +167,7 @@ function SegmentEditor({
           <button
             onClick={onToggle}
             className={`w-10 h-5 rounded-full transition-colors ${
-              seg.accepted ? 'bg-accent' : 'bg-surface-3'
+              seg.accepted ? 'bg-danger-matte' : 'bg-surface-3'
             }`}
           >
             <div
@@ -206,11 +213,13 @@ function SegmentEditor({
             <TimeInput
               value={seg.start}
               onChange={v => onUpdateTimes(v, seg.end)}
+              fps={fps}
             />
             <span className="text-text-muted text-xs">&ndash;</span>
             <TimeInput
               value={seg.end}
               onChange={v => onUpdateTimes(seg.start, v)}
+              fps={fps}
             />
             <span className="text-[10px] text-text-muted font-mono ml-1">
               ({formatTime(seg.end - seg.start)})
@@ -298,7 +307,7 @@ function SegmentEditor({
             disabled={!canSplit}
             className="w-full text-xs py-2 rounded-md border transition-colors disabled:opacity-30 disabled:cursor-not-allowed border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-hover"
           >
-            Split at playhead ({formatTimeFull(currentTime)})
+            Split at playhead ({formatTimeFrames(currentTime, fps)})
           </button>
         </div>
 
@@ -317,11 +326,15 @@ function SegmentEditor({
 function SegmentSummary({
   segments,
   onSelect,
+  onSeek,
   onAdd,
+  fps,
 }: {
   segments: CleanSegment[];
   onSelect: (index: number) => void;
+  onSeek: (time: number) => void;
   onAdd: (seg: { start: number; end: number; types: SegmentType[]; description: string }) => void;
+  fps: number;
 }) {
   const [showAdd, setShowAdd] = useState(false);
 
@@ -343,7 +356,7 @@ function SegmentSummary({
           return (
             <button
               key={i}
-              onClick={() => onSelect(i)}
+              onClick={() => { onSelect(i); onSeek(seg.start); }}
               className={`w-full text-left px-2.5 py-1.5 rounded-md border border-border-subtle transition-all text-xs hover:border-border-hover ${
                 seg.accepted ? 'bg-surface-1' : 'bg-surface-1 opacity-40'
               }`}
@@ -353,7 +366,7 @@ function SegmentSummary({
                   {seg.types[0]}
                 </span>
                 <span className="font-mono text-text-secondary">
-                  {formatTimeFull(seg.start)} &ndash; {formatTimeFull(seg.end)}
+                  {formatTimeFrames(seg.start, fps)} &ndash; {formatTimeFrames(seg.end, fps)}
                 </span>
                 <span className="text-text-muted ml-auto">
                   {seg.accepted ? 'Cut' : 'Keep'}
@@ -384,7 +397,7 @@ function SegmentSummary({
   );
 }
 
-function TimeInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+function TimeInput({ value, onChange, fps }: { value: number; onChange: (v: number) => void; fps: number }) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState('');
 
@@ -392,11 +405,11 @@ function TimeInput({ value, onChange }: { value: number; onChange: (v: number) =
     return (
       <input
         autoFocus
-        className="w-20 text-xs font-mono bg-surface-2 border border-border-subtle rounded px-1 py-0.5 text-text-primary focus:border-accent focus:outline-none transition-colors"
+        className="w-24 text-xs font-mono bg-surface-2 border border-border-subtle rounded px-1 py-0.5 text-text-primary focus:border-accent focus:outline-none transition-colors"
         value={text}
         onChange={e => setText(e.target.value)}
         onBlur={() => {
-          const parsed = parseTime(text);
+          const parsed = parseTimeFrames(text, fps);
           if (parsed !== null) onChange(parsed);
           setEditing(false);
         }}
@@ -411,12 +424,12 @@ function TimeInput({ value, onChange }: { value: number; onChange: (v: number) =
   return (
     <button
       onClick={() => {
-        setText(formatTimeFull(value));
+        setText(formatTimeFrames(value, fps));
         setEditing(true);
       }}
       className="text-xs font-mono text-text-secondary hover:text-accent transition-colors"
     >
-      {formatTimeFull(value)}
+      {formatTimeFrames(value, fps)}
     </button>
   );
 }

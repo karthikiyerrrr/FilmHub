@@ -1,7 +1,7 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import type { CleanSegment } from '../types';
 import { useHandleDrag } from '../hooks/useHandleDrag';
-import { formatTime, formatTimePrecise } from '../utils/formatTime';
+import { formatTime, formatTimeFrames } from '../utils/formatTime';
 
 const TYPE_COLORS: Record<string, { normal: string; dim: string; border: string; label: string }> = {
   music: {
@@ -42,9 +42,10 @@ interface Props {
   onSeek: (time: number) => void;
   onUpdateTimes: (index: number, start: number, end: number) => void;
   onSelect: (index: number | null) => void;
+  fps: number;
 }
 
-export default function Timeline({ duration, currentTime, segments, selectedIndex, onSeek, onUpdateTimes, onSelect }: Props) {
+export default function Timeline({ duration, currentTime, segments, selectedIndex, onSeek, onUpdateTimes, onSelect, fps }: Props) {
   const timelineRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(1);
   const [panOffset, setPanOffset] = useState(0);
@@ -99,7 +100,6 @@ export default function Timeline({ duration, currentTime, segments, selectedInde
         const time = clientXToTime(e.clientX);
         onSeek(time);
         setIsScrubbing(true);
-        onSelect(null);
       }
     },
     [zoom, panOffset, dragState, clientXToTime, onSeek, onSelect]
@@ -275,7 +275,7 @@ export default function Timeline({ duration, currentTime, segments, selectedInde
             className="absolute -top-6 text-[10px] font-mono bg-surface-0/95 text-text-primary px-2 py-0.5 rounded border border-border-hover pointer-events-none z-30 whitespace-nowrap"
             style={{ left: `${dragTooltipPercent}%`, transform: 'translateX(-50%)' }}
           >
-            {formatTimePrecise(dragTime)}
+            {formatTimeFrames(dragTime, fps)}
           </div>
         )}
 

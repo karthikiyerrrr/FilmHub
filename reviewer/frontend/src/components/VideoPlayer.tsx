@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { RefObject } from 'react';
-import { formatTime } from '../utils/formatTime';
+import { formatTimeFrames } from '../utils/formatTime';
 
 const SPEEDS = [0.5, 1, 1.5, 2];
 
@@ -17,6 +17,7 @@ interface Props {
   play: () => void;
   pause: () => void;
   setPlaybackRate: (rate: number) => void;
+  fps: number;
 }
 
 export default function VideoPlayer({
@@ -32,6 +33,7 @@ export default function VideoPlayer({
   play,
   pause,
   setPlaybackRate,
+  fps,
 }: Props) {
   const [speed, setSpeed] = useState(1);
 
@@ -86,7 +88,7 @@ export default function VideoPlayer({
         </button>
 
         <span className="text-xs text-text-secondary font-mono tabular-nums min-w-[100px]">
-          {formatTime(currentTime)} / {formatTime(duration)}
+          {formatTimeFrames(currentTime, fps)} / {formatTimeFrames(duration, fps)}
         </span>
 
         <button

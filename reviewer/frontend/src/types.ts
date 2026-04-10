@@ -44,6 +44,7 @@ export interface ReviewData {
   video: {
     filename: string;
     path: string;
+    fps?: number;
   };
   music: MusicSegment[] | null;
   graphics: GraphicsCandidate[] | null;
