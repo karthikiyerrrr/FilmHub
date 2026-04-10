@@ -1,7 +1,14 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { SignInForm } from './components/SignInForm'
 import { VideoPicker } from './components/VideoPicker'
+import { ReviewView } from './components/ReviewView'
+
+function ReviewPage() {
+  const { videoId } = useParams<{ videoId: string }>()
+  if (!videoId) return <Navigate to="/dashboard" replace />
+  return <ReviewView videoId={videoId} />
+}
 
 function App() {
   return (
@@ -20,7 +27,7 @@ function App() {
           path="/review/:videoId"
           element={
             <ProtectedRoute>
-              <div className="p-8 text-primary">Review (TODO)</div>
+              <ReviewPage />
             </ProtectedRoute>
           }
         />
