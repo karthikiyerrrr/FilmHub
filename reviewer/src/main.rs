@@ -102,6 +102,7 @@ async fn main() {
             get(routes::analysis::get_frame),
         )
         .route("/api/segments/{video}", post(routes::segments::save_segments))
+        .route("/api/review/{video}", post(routes::segments::save_review))
         .route("/api/cut/{video}", post(routes::cut::start_cut))
         .route("/api/cut/{video}/status", get(routes::cut::get_cut_status));
 
