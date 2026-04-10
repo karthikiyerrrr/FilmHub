@@ -1,20 +1,26 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { CleanSegment, CutStatus } from '../types';
-import { saveSegments, startCut, getCutStatus } from '../api';
+import { saveSegments, saveReviewData, startCut, getCutStatus } from '../api';
 import { formatDuration } from '../utils/formatTime';
 
 interface Props {
   video: string;
+  segments: CleanSegment[];
   acceptedSegments: CleanSegment[];
   totalRemovedSeconds: number;
   onReset: () => void;
+  onSelectAll: () => void;
+  onDeselectAll: () => void;
 }
 
 export default function ActionBar({
   video,
+  segments,
   acceptedSegments,
   totalRemovedSeconds,
   onReset,
+  onSelectAll,
+  onDeselectAll,
 }: Props) {
   const [status, setStatus] = useState<CutStatus>({ status: 'idle' });
   const [elapsed, setElapsed] = useState(0);
@@ -32,6 +38,17 @@ export default function ActionBar({
     if (acceptedSegments.length === 0) return;
 
     try {
+      // Save review data (all segments with review state)
+      await saveReviewData(video, {
+        video,
+        reviewed_at: new Date().toISOString(),
+        segments,
+        accepted_count: acceptedSegments.length,
+        rejected_count: segments.length - acceptedSegments.length,
+        total_removed_seconds: totalRemovedSeconds,
+      });
+
+      // Save accepted segments for cutting (existing flow)
       const toSave = acceptedSegments.map(({ accepted: _, ...rest }) => rest);
       const result = await saveSegments(video, toSave);
 
@@ -59,7 +76,7 @@ export default function ActionBar({
     } catch (e) {
       setStatus({ status: 'failed', error: String(e) });
     }
-  }, [video, acceptedSegments]);
+  }, [video, segments, acceptedSegments, totalRemovedSeconds]);
 
   return (
     <div className="flex items-center justify-between px-4 py-3 bg-surface-1 border-t border-border-subtle">
@@ -68,6 +85,14 @@ export default function ActionBar({
           <strong className="text-text-primary">{acceptedSegments.length}</strong> segments,{' '}
           <strong className="text-text-primary">{formatDuration(totalRemovedSeconds)}</strong> to remove
         </span>
+        <div className="flex gap-2">
+          <button onClick={onSelectAll} className="text-xs text-text-muted hover:text-accent transition-colors">
+            Select all
+          </button>
+          <button onClick={onDeselectAll} className="text-xs text-text-muted hover:text-accent transition-colors">
+            Deselect all
+          </button>
+        </div>
       </div>
 
       <div className="flex items-center gap-3">
