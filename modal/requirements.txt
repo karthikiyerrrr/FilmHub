@@ -1,0 +1,7 @@
+faster-whisper
+pyannote.audio
+demucs
+librosa
+pyacoustid
+opencv-python-headless
+google-cloud-storage
