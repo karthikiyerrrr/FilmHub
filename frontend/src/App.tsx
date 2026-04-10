@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { SignInForm } from './components/SignInForm'
+import { VideoPicker } from './components/VideoPicker'
 
 function App() {
   return (
@@ -11,7 +12,7 @@ function App() {
           path="/dashboard"
           element={
             <ProtectedRoute>
-              <div className="p-8 text-primary">Dashboard (TODO)</div>
+              <VideoPicker />
             </ProtectedRoute>
           }
         />
