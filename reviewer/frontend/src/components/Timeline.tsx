@@ -38,11 +38,13 @@ interface Props {
   duration: number;
   currentTime: number;
   segments: CleanSegment[];
+  selectedIndex: number | null;
   onSeek: (time: number) => void;
   onUpdateTimes: (index: number, start: number, end: number) => void;
+  onSelect: (index: number | null) => void;
 }
 
-export default function Timeline({ duration, currentTime, segments, onSeek, onUpdateTimes }: Props) {
+export default function Timeline({ duration, currentTime, segments, selectedIndex, onSeek, onUpdateTimes, onSelect }: Props) {
   const timelineRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(1);
   const [panOffset, setPanOffset] = useState(0);
@@ -97,9 +99,10 @@ export default function Timeline({ duration, currentTime, segments, onSeek, onUp
         const time = clientXToTime(e.clientX);
         onSeek(time);
         setIsScrubbing(true);
+        onSelect(null);
       }
     },
-    [zoom, panOffset, dragState, clientXToTime, onSeek]
+    [zoom, panOffset, dragState, clientXToTime, onSeek, onSelect]
   );
 
   // Snap time to nearest segment edge when shift is held
@@ -298,14 +301,19 @@ export default function Timeline({ duration, currentTime, segments, onSeek, onUp
 
                 {/* Segment bar */}
                 <div
-                  className="absolute top-0.5 bottom-0.5 rounded-sm"
+                  className="absolute top-0.5 bottom-0.5 rounded-sm cursor-pointer"
                   style={{
                     left: `${clampedLeft}%`,
                     width: `${clampedRight - clampedLeft}%`,
                     backgroundColor: colors.bg,
                     borderLeft: left >= 0 ? `1px solid ${colors.border}` : undefined,
                     borderRight: right <= 100 ? `1px solid ${colors.border}` : undefined,
-                    zIndex: isBeingDragged ? 15 : 5,
+                    zIndex: isBeingDragged ? 15 : selectedIndex === i ? 12 : 5,
+                    boxShadow: selectedIndex === i ? `0 0 0 1.5px ${colors.border}, 0 0 8px ${colors.bg}` : undefined,
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelect(selectedIndex === i ? null : i);
                   }}
                 >
                   {/* Type label (visible if bar is wide enough) */}
