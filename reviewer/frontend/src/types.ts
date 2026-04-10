@@ -75,3 +75,12 @@ export interface SaveResult {
   file: string;
   sequence: number;
 }
+
+export interface ReviewExport {
+  video: string;
+  reviewed_at: string;
+  segments: CleanSegment[];
+  accepted_count: number;
+  rejected_count: number;
+  total_removed_seconds: number;
+}

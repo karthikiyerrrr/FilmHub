@@ -53,6 +53,28 @@ export function useSegments(initial: CleanSegment[]) {
     setSegments(initial);
   }, [initial]);
 
+  const updateTypes = useCallback(
+    (index: number, types: SegmentType[]) => {
+      setSegments(prev =>
+        prev.map((s, i) => (i === index ? { ...s, types } : s))
+      );
+    },
+    []
+  );
+
+  const splitSegment = useCallback(
+    (index: number, splitTime: number) => {
+      setSegments(prev => {
+        const seg = prev[index];
+        if (!seg || splitTime <= seg.start || splitTime >= seg.end) return prev;
+        const left: CleanSegment = { ...seg, end: splitTime };
+        const right: CleanSegment = { ...seg, start: splitTime };
+        return [...prev.slice(0, index), left, right, ...prev.slice(index + 1)];
+      });
+    },
+    []
+  );
+
   const acceptedSegments = useMemo(
     () => segments.filter(s => s.accepted),
     [segments]
@@ -68,6 +90,8 @@ export function useSegments(initial: CleanSegment[]) {
     toggle,
     updateTimes,
     updateDescription,
+    updateTypes,
+    splitSegment,
     addSegment,
     removeSegment,
     selectAll,
