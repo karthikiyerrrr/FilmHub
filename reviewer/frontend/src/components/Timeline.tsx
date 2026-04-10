@@ -42,10 +42,12 @@ interface Props {
   onSeek: (time: number) => void;
   onUpdateTimes: (index: number, start: number, end: number) => void;
   onSelect: (index: number | null) => void;
+  onBeginBatch?: () => void;
+  onEndBatch?: () => void;
   fps: number;
 }
 
-export default function Timeline({ duration, currentTime, segments, selectedIndex, onSeek, onUpdateTimes, onSelect, fps }: Props) {
+export default function Timeline({ duration, currentTime, segments, selectedIndex, onSeek, onUpdateTimes, onSelect, onBeginBatch, onEndBatch, fps }: Props) {
   const timelineRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(1);
   const [panOffset, setPanOffset] = useState(0);
@@ -65,6 +67,8 @@ export default function Timeline({ duration, currentTime, segments, selectedInde
     segments,
     onUpdateTimes,
     onSeek,
+    onBeginBatch,
+    onEndBatch,
   });
 
   const timeToPercent = useCallback(

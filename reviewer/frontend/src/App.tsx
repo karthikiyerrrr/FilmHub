@@ -134,7 +134,14 @@ function ReviewView({ video, onBack }: { video: string; onBack: () => void }) {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore when typing in input fields
+      // Undo: Cmd+Z (Mac) or Ctrl+Z (Windows/Linux) — works even in input fields
+      if (e.key === 'z' && (e.metaKey || e.ctrlKey) && !e.shiftKey) {
+        e.preventDefault();
+        segState.undo();
+        return;
+      }
+
+      // Ignore other shortcuts when typing in input fields
       const tag = (e.target as HTMLElement).tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
 
@@ -166,7 +173,7 @@ function ReviewView({ video, onBack }: { video: string; onBack: () => void }) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [videoSync, jumpToSegment]);
+  }, [videoSync, jumpToSegment, segState]);
 
   if (loading) {
     return (
@@ -313,6 +320,8 @@ function ReviewView({ video, onBack }: { video: string; onBack: () => void }) {
             onSeek={videoSync.seek}
             onUpdateTimes={segState.updateTimes}
             onSelect={setSelectedSegmentIndex}
+            onBeginBatch={segState.beginBatch}
+            onEndBatch={segState.endBatch}
             fps={videoSync.fps}
           />
         </div>

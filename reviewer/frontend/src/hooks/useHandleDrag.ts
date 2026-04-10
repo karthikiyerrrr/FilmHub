@@ -15,6 +15,8 @@ interface UseHandleDragOptions {
   segments: CleanSegment[];
   onUpdateTimes: (index: number, start: number, end: number) => void;
   onSeek: (time: number) => void;
+  onBeginBatch?: () => void;
+  onEndBatch?: () => void;
 }
 
 const MIN_SEGMENT_DURATION = 0.5;
@@ -27,6 +29,8 @@ export function useHandleDrag({
   segments,
   onUpdateTimes,
   onSeek,
+  onBeginBatch,
+  onEndBatch,
 }: UseHandleDragOptions) {
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [dragTime, setDragTime] = useState<number | null>(null);
@@ -50,13 +54,14 @@ export function useHandleDrag({
     (e: React.MouseEvent, segmentIndex: number, edge: 'start' | 'end') => {
       e.stopPropagation();
       e.preventDefault();
+      onBeginBatch?.();
       setDragState({ segmentIndex, edge });
       const time = clientXToTime(e.clientX);
       setDragTime(time);
       setDragCursorX(e.clientX);
       onSeek(time);
     },
-    [clientXToTime, onSeek]
+    [clientXToTime, onSeek, onBeginBatch]
   );
 
   useEffect(() => {
@@ -92,6 +97,7 @@ export function useHandleDrag({
       cancelAnimationFrame(rafRef.current);
       setDragState(null);
       setDragTime(null);
+      onEndBatch?.();
     };
 
     window.addEventListener('mousemove', handleMove);
@@ -101,7 +107,7 @@ export function useHandleDrag({
       window.removeEventListener('mousemove', handleMove);
       window.removeEventListener('mouseup', handleUp);
     };
-  }, [dragState, clientXToTime, onUpdateTimes, onSeek]);
+  }, [dragState, clientXToTime, onUpdateTimes, onSeek, onEndBatch]);
 
   return { dragState, dragTime, dragCursorX, onHandleMouseDown };
 }
