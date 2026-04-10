@@ -25,6 +25,19 @@ export async function saveSegments(
   return res.json();
 }
 
+export async function saveReviewData(
+  video: string,
+  data: import('./types').ReviewExport
+): Promise<SaveResult> {
+  const res = await fetch(`/api/review/${video}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to save review data');
+  return res.json();
+}
+
 export async function startCut(
   video: string,
   segmentsFile: string
