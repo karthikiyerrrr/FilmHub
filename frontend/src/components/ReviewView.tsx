@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { videoStreamUrl } from '../api';
+import { fetchVideoUrl } from '../api';
 import { useAnalysis } from '../hooks/useAnalysis';
 import { useVideoSync } from '../hooks/useVideoSync';
 import { useSegments } from '../hooks/useSegments';
@@ -31,6 +31,11 @@ export function ReviewView({ videoId }: Props) {
   const [selectedSegmentIndex, setSelectedSegmentIndex] = useState<number | null>(null);
   const [propertiesCollapsed, setPropertiesCollapsed] = useState(false);
   const [transcriptCollapsed, setTranscriptCollapsed] = useState(false);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchVideoUrl(videoId).then(setVideoUrl).catch(console.error);
+  }, [videoId]);
 
   useEffect(() => {
     if (stableInitial.length > 0) {
@@ -220,7 +225,7 @@ export function ReviewView({ videoId }: Props) {
           <div className="max-h-[50vh] xl:max-h-[70vh] flex justify-center max-w-full overflow-hidden">
             <VideoPlayer
               videoRef={videoSync.videoRef}
-              src={videoStreamUrl(videoId)}
+              src={videoUrl || ''}
               currentTime={videoSync.currentTime}
               duration={videoSync.duration}
               isPlaying={videoSync.isPlaying}

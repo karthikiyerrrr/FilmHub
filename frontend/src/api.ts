@@ -36,8 +36,9 @@ export async function fetchVideos(): Promise<VideoInfo[]> {
   return apiFetch('/api/videos')
 }
 
-export function videoStreamUrl(videoId: string): string {
-  return `${API_BASE}/api/videos/${videoId}/stream`
+export async function fetchVideoUrl(videoId: string): Promise<string> {
+  const data = await apiFetch(`/api/videos/${videoId}/url`)
+  return data.url
 }
 
 export async function triggerAnalysis(videoId: string, passes: string[]): Promise<{ jobId: string }> {

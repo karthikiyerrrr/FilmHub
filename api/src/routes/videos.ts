@@ -23,7 +23,7 @@ router.get('/videos', async (req: AuthRequest, res) => {
   res.json(videos)
 })
 
-router.get('/videos/:videoId/stream', async (req: AuthRequest, res) => {
+router.get('/videos/:videoId/url', async (req: AuthRequest, res) => {
   const videoId = req.params.videoId as string
   const db = admin.firestore()
   const doc = await db.collection('videos').doc(videoId).get()
@@ -41,7 +41,7 @@ router.get('/videos/:videoId/stream', async (req: AuthRequest, res) => {
     expires: Date.now() + 60 * 60 * 1000,
   })
 
-  res.redirect(302, signedUrl)
+  res.json({ url: signedUrl })
 })
 
 export default router
