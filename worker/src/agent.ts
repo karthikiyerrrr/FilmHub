@@ -211,6 +211,12 @@ IMPORTANT format rules for suggested_segments:
 - "types" is an ARRAY of strings, not a single string. Valid values: "music", "graphics", "promotions"
 - "accepted" must be true (boolean)
 - "start" and "end" are numbers in seconds
+- Graphics candidates are TRANSITION POINTS, not ranges. To create suggested_segments from them:
+  - Group nearby candidates (within 5 seconds) into a single segment
+  - Set start to 1 second BEFORE the first candidate's timestamp
+  - Set end to 1 second AFTER the last candidate's timestamp
+  - Include ALL candidates, not just a few
+  - If a graphics segment overlaps with a promotions segment, merge them with types: ["graphics", "promotions"]
 
 CRITICAL WORKFLOW — you MUST follow this exact sequence:
 1. Run each detection pass tool (run_transcription, detect_music, detect_graphics)
