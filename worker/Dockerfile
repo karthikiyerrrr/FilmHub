@@ -14,8 +14,7 @@ RUN npm ci
 COPY tsconfig.json ./
 COPY src/ src/
 RUN npx tsc
-RUN ls -la /app/node_modules/@anthropic-ai/claude-agent-sdk/cli.js || echo "CLI NOT FOUND"
-RUN node -e "const fs = require('fs'); console.log('cli.js exists:', fs.existsSync('/app/node_modules/@anthropic-ai/claude-agent-sdk/cli.js'))"
+RUN chmod +x /app/node_modules/@anthropic-ai/claude-agent-sdk/cli.js
 
 # Copy skill files (placed here by the deploy script)
 COPY .claude/ .claude/

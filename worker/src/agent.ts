@@ -58,6 +58,7 @@ ANALYSIS_DIR: ${analysisDir}`
       prompt,
       options: {
         cwd: projectRoot,
+        executable: 'node',
         pathToClaudeCodeExecutable: '/app/node_modules/@anthropic-ai/claude-agent-sdk/cli.js',
         settingSources: ['project'],
         allowedTools: ['Skill', 'Read', 'Write', 'Bash', 'Glob', 'Grep'],
