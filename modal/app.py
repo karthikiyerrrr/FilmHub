@@ -8,8 +8,18 @@ base_image = (
     .pip_install("google-cloud-storage", "fastapi[standard]")
 )
 
-whisper_image = base_image.pip_install("faster-whisper").add_local_python_source("gweebler_modal")
-demucs_image = base_image.pip_install("demucs", "librosa", "pyacoustid").add_local_python_source("gweebler_modal")
+whisper_image = (
+    modal.Image.from_registry("nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04", add_python="3.11")
+    .apt_install("ffmpeg")
+    .pip_install("google-cloud-storage", "fastapi[standard]", "faster-whisper")
+    .add_local_python_source("gweebler_modal")
+)
+demucs_image = (
+    modal.Image.from_registry("nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04", add_python="3.11")
+    .apt_install("ffmpeg")
+    .pip_install("google-cloud-storage", "fastapi[standard]", "demucs", "librosa", "pyacoustid")
+    .add_local_python_source("gweebler_modal")
+)
 graphics_image = base_image.pip_install("opencv-python-headless", "numpy").add_local_python_source("gweebler_modal")
 cut_image = base_image.add_local_python_source("gweebler_modal")
 
