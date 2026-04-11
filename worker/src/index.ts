@@ -25,23 +25,37 @@ app.post('/run-analysis', async (req, res) => {
     return
   }
 
-  const file = bucket.file(gcsVideoPath)
-  const [videoUrl] = await file.getSignedUrl({
-    action: 'read',
-    expires: Date.now() + 2 * 60 * 60 * 1000,
-  })
+  console.log(`Received analysis job ${jobId} for video ${videoId}, passes: ${passes.join(', ')}`)
+
+  let videoUrl: string
+  try {
+    const file = bucket.file(gcsVideoPath)
+    const [url] = await file.getSignedUrl({
+      action: 'read',
+      expires: Date.now() + 2 * 60 * 60 * 1000,
+    })
+    videoUrl = url
+    console.log(`Generated signed URL for ${gcsVideoPath}`)
+  } catch (err) {
+    console.error(`Failed to generate signed URL for ${gcsVideoPath}:`, err)
+    res.status(500).json({ error: 'Failed to generate video URL' })
+    return
+  }
 
   res.json({ status: 'started' })
 
-  runAnalysis({
-    jobId,
-    videoId,
-    videoUrl,
-    passes,
-    bucketName: process.env.GCS_BUCKET || '',
-  }).catch((err) => {
-    console.error(`Analysis failed for job ${jobId}:`, err)
-  })
+  // Run in background — use setTimeout to ensure response is sent first
+  setTimeout(() => {
+    runAnalysis({
+      jobId,
+      videoId,
+      videoUrl,
+      passes,
+      bucketName: process.env.GCS_BUCKET || '',
+    }).catch((err) => {
+      console.error(`Analysis failed for job ${jobId}:`, err)
+    })
+  }, 100)
 })
 
 const PORT = parseInt(process.env.PORT || '8081')
