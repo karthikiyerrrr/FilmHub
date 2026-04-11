@@ -52,10 +52,25 @@ router.post('/analyze/:videoId', async (req: AuthRequest, res) => {
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
   })
 
-  // Call worker directly (Cloud Tasks can be added later for production hardening)
-  fetch(`${WORKER_SERVICE_URL}/run-analysis`, {
+  // Call worker with OIDC token for service-to-service auth
+  const workerUrl = `${WORKER_SERVICE_URL}/run-analysis`
+  let authHeaders: Record<string, string> = {}
+  if (!WORKER_SERVICE_URL.includes('localhost')) {
+    try {
+      // On Cloud Run, get an OIDC token from the metadata server
+      const tokenRes = await fetch(
+        `http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/identity?audience=${WORKER_SERVICE_URL}`,
+        { headers: { 'Metadata-Flavor': 'Google' } }
+      )
+      const idToken = await tokenRes.text()
+      authHeaders = { Authorization: `Bearer ${idToken}` }
+    } catch (err) {
+      console.error('Failed to get OIDC token:', err)
+    }
+  }
+  fetch(workerUrl, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders },
     body: JSON.stringify({ jobId, videoId, passes, gcsVideoPath }),
   }).catch((err) => console.error('Worker call failed:', err))
 
