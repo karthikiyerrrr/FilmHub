@@ -53,6 +53,17 @@ const tools: Anthropic.Tool[] = [
     },
   },
   {
+    name: 'read_gcs_file',
+    description: 'Read a JSON file from cloud storage. Use this after each detection pass to get the actual results written by Modal.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        path: { type: 'string', description: 'Filename in the analysis folder, e.g. "transcript.json", "music.json", "graphics_candidates.json"' },
+      },
+      required: ['path'],
+    },
+  },
+  {
     name: 'update_progress',
     description: 'Update the analysis job progress visible to the user in real-time.',
     input_schema: {
@@ -128,6 +139,16 @@ async function handleToolCall(
       await updateFirestoreProgress(ctx.jobId, { message: 'Promotion detection complete', completedPasses })
       return JSON.stringify({ status: 'completed', note: 'Promotions analyzed from transcript' })
     }
+    case 'read_gcs_file': {
+      const path = toolInput.path as string
+      const gcsPath = `analysis/${ctx.videoId}/${path}`
+      try {
+        const [content] = await bucket.file(gcsPath).download()
+        return content.toString()
+      } catch {
+        return JSON.stringify({ error: `File not found: ${gcsPath}` })
+      }
+    }
     case 'update_progress': {
       const msg = toolInput.message as string
       await updateFirestoreProgress(ctx.jobId, { message: msg })
@@ -190,7 +211,15 @@ IMPORTANT format rules for suggested_segments:
 - "types" is an ARRAY of strings, not a single string. Valid values: "music", "graphics", "promotions"
 - "accepted" must be true (boolean)
 - "start" and "end" are numbers in seconds
-- Include the raw detection data in the top-level music/graphics/transcript/promotions fields by reading them from GCS after each pass completes
+
+CRITICAL WORKFLOW — you MUST follow this exact sequence:
+1. Run each detection pass tool (run_transcription, detect_music, detect_graphics)
+2. After EACH pass, use read_gcs_file to read the ACTUAL results written by Modal:
+   - After run_transcription: read_gcs_file("transcript.json")
+   - After detect_music: read_gcs_file("music.json")
+   - After detect_graphics: read_gcs_file("graphics_candidates.json")
+3. For detect_promotions: first read_gcs_file("transcript.json") to get the real transcript, then use detect_promotions with that data
+4. When assembling review_data.json, use ONLY the real data you read from GCS. NEVER make up transcript text, timestamps, or segment data. Copy the actual values from the files you read.
 
 Video URL: ${ctx.videoUrl}
 Video ID: ${ctx.videoId}`
