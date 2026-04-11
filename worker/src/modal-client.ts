@@ -1,5 +1,12 @@
-const MODAL_ENDPOINT_URL = process.env.MODAL_ENDPOINT_URL || ''
 const MODAL_AUTH_TOKEN = process.env.MODAL_AUTH_TOKEN || ''
+
+// Modal endpoint URLs are individually configured since each has a unique subdomain
+const MODAL_URLS: Record<string, string> = {
+  transcribe: process.env.MODAL_URL_TRANSCRIBE || '',
+  detect_music: process.env.MODAL_URL_DETECT_MUSIC || '',
+  detect_graphics: process.env.MODAL_URL_DETECT_GRAPHICS || '',
+  cut_video: process.env.MODAL_URL_CUT_VIDEO || '',
+}
 
 interface ModalResponse {
   status: string
@@ -10,7 +17,8 @@ interface ModalResponse {
 }
 
 async function callModal(endpoint: string, body: Record<string, unknown>): Promise<ModalResponse> {
-  const url = `${MODAL_ENDPOINT_URL}/${endpoint}`
+  const url = MODAL_URLS[endpoint]
+  if (!url) throw new Error(`No URL configured for Modal endpoint: ${endpoint}`)
   const res = await fetch(url, {
     method: 'POST',
     headers: {

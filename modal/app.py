@@ -5,7 +5,7 @@ app = modal.App("gweebler")
 base_image = (
     modal.Image.debian_slim(python_version="3.11")
     .apt_install("ffmpeg")
-    .pip_install("google-cloud-storage")
+    .pip_install("google-cloud-storage", "fastapi[standard]")
 )
 
 whisper_image = base_image.pip_install("faster-whisper")
@@ -19,7 +19,7 @@ graphics_image = base_image.pip_install("opencv-python-headless", "numpy")
     timeout=900,
     secrets=[modal.Secret.from_name("gweebler")],
 )
-@modal.web_endpoint(method="POST")
+@modal.fastapi_endpoint(method="POST")
 def transcribe(item: dict) -> dict:
     from gweebler_modal.transcribe import run
     return run(
@@ -36,7 +36,7 @@ def transcribe(item: dict) -> dict:
     timeout=900,
     secrets=[modal.Secret.from_name("gweebler")],
 )
-@modal.web_endpoint(method="POST")
+@modal.fastapi_endpoint(method="POST")
 def detect_music(item: dict) -> dict:
     from gweebler_modal.detect_music import run
     return run(
@@ -51,7 +51,7 @@ def detect_music(item: dict) -> dict:
     timeout=600,
     secrets=[modal.Secret.from_name("gweebler")],
 )
-@modal.web_endpoint(method="POST")
+@modal.fastapi_endpoint(method="POST")
 def detect_graphics(item: dict) -> dict:
     from gweebler_modal.detect_graphics import run
     return run(
@@ -67,7 +67,7 @@ def detect_graphics(item: dict) -> dict:
     timeout=900,
     secrets=[modal.Secret.from_name("gweebler")],
 )
-@modal.web_endpoint(method="POST")
+@modal.fastapi_endpoint(method="POST")
 def cut_video(item: dict) -> dict:
     from gweebler_modal.cut_video import run
     return run(

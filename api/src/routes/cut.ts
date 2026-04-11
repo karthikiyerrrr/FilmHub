@@ -7,7 +7,7 @@ const router = Router()
 const storage = new Storage()
 const bucket = storage.bucket(process.env.GCS_BUCKET || '')
 
-const MODAL_ENDPOINT_URL = process.env.MODAL_ENDPOINT_URL || ''
+const MODAL_URL_CUT_VIDEO = process.env.MODAL_URL_CUT_VIDEO || ''
 const MODAL_AUTH_TOKEN = process.env.MODAL_AUTH_TOKEN || ''
 
 router.post('/cut/:videoId', async (req: AuthRequest, res) => {
@@ -42,7 +42,7 @@ router.post('/cut/:videoId', async (req: AuthRequest, res) => {
   })
 
   try {
-    const modalRes = await fetch(`${MODAL_ENDPOINT_URL}/cut_video`, {
+    const modalRes = await fetch(MODAL_URL_CUT_VIDEO, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
