@@ -1,12 +1,14 @@
 import { auth } from './firebase'
 import type { VideoInfo, ReviewData, ReviewExport, CleanSegment } from './types'
 
+const API_BASE = import.meta.env.VITE_API_URL || ''
+
 async function apiFetch(path: string, options: RequestInit = {}) {
   const user = auth.currentUser
   if (!user) throw new Error('Not authenticated')
 
   const token = await user.getIdToken()
-  const res = await fetch(path, {
+  const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -35,7 +37,7 @@ export async function fetchVideos(): Promise<VideoInfo[]> {
 }
 
 export function videoStreamUrl(videoId: string): string {
-  return `/api/videos/${videoId}/stream`
+  return `${API_BASE}/api/videos/${videoId}/stream`
 }
 
 export async function triggerAnalysis(videoId: string, passes: string[]): Promise<{ jobId: string }> {
@@ -50,7 +52,7 @@ export async function fetchAnalysis(videoId: string): Promise<ReviewData> {
 }
 
 export function frameUrl(videoId: string, filename: string): string {
-  return `/api/analysis/${videoId}/frames/${filename}`
+  return `${API_BASE}/api/analysis/${videoId}/frames/${filename}`
 }
 
 export async function saveReview(videoId: string, data: { segments: CleanSegment[]; reviewData: ReviewExport }): Promise<{ reviewFile: string; segmentsFile: string }> {
