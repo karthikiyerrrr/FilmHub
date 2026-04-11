@@ -29,6 +29,7 @@ router.post('/analyze/:videoId', async (req: AuthRequest, res) => {
   }
 
   const gcsVideoPath = videoDoc.data()!.gcsPath as string
+  const videoFilename = videoDoc.data()!.filename as string
   const jobId = crypto.randomUUID()
 
   await db.collection('jobs').doc(jobId).set({
@@ -71,7 +72,7 @@ router.post('/analyze/:videoId', async (req: AuthRequest, res) => {
   fetch(workerUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders },
-    body: JSON.stringify({ jobId, videoId, passes, gcsVideoPath }),
+    body: JSON.stringify({ jobId, videoId, passes, gcsVideoPath, videoFilename }),
   }).catch((err) => console.error('Worker call failed:', err))
 
   res.json({ jobId })

@@ -18,7 +18,7 @@ app.get('/health', (_req, res) => {
 })
 
 app.post('/run-analysis', async (req, res) => {
-  const { jobId, videoId, passes, gcsVideoPath } = req.body
+  const { jobId, videoId, passes, gcsVideoPath, videoFilename } = req.body
 
   if (!jobId || !videoId || !passes || !gcsVideoPath) {
     res.status(400).json({ error: 'Missing required fields' })
@@ -42,20 +42,24 @@ app.post('/run-analysis', async (req, res) => {
     return
   }
 
-  res.json({ status: 'started' })
-
-  // Run in background — use setTimeout to ensure response is sent first
-  setTimeout(() => {
-    runAnalysis({
+  // Run analysis and keep request open until complete
+  // (Cloud Run terminates containers after response is sent)
+  try {
+    console.log(`Starting analysis for job ${jobId}...`)
+    await runAnalysis({
       jobId,
       videoId,
       videoUrl,
+      videoFilename: videoFilename || gcsVideoPath.split('/').pop() || 'video.mp4',
       passes,
       bucketName: process.env.GCS_BUCKET || '',
-    }).catch((err) => {
-      console.error(`Analysis failed for job ${jobId}:`, err)
     })
-  }, 100)
+    console.log(`Analysis completed for job ${jobId}`)
+    res.json({ status: 'completed' })
+  } catch (err) {
+    console.error(`Analysis failed for job ${jobId}:`, err)
+    res.status(500).json({ status: 'failed', error: String(err) })
+  }
 })
 
 const PORT = parseInt(process.env.PORT || '8081')
