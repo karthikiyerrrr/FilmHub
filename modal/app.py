@@ -6,12 +6,12 @@ base_image = (
     modal.Image.debian_slim(python_version="3.11")
     .apt_install("ffmpeg")
     .pip_install("google-cloud-storage", "fastapi[standard]")
-    .add_local_python_source("gweebler_modal")
 )
 
-whisper_image = base_image.pip_install("faster-whisper")
-demucs_image = base_image.pip_install("demucs", "librosa", "pyacoustid")
-graphics_image = base_image.pip_install("opencv-python-headless", "numpy")
+whisper_image = base_image.pip_install("faster-whisper").add_local_python_source("gweebler_modal")
+demucs_image = base_image.pip_install("demucs", "librosa", "pyacoustid").add_local_python_source("gweebler_modal")
+graphics_image = base_image.pip_install("opencv-python-headless", "numpy").add_local_python_source("gweebler_modal")
+cut_image = base_image.add_local_python_source("gweebler_modal")
 
 
 @app.function(
@@ -64,7 +64,7 @@ def detect_graphics(item: dict) -> dict:
 
 
 @app.function(
-    image=base_image,
+    image=cut_image,
     timeout=900,
     secrets=[modal.Secret.from_name("gweebler")],
 )
