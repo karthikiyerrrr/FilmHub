@@ -87,7 +87,8 @@ def detect_transitions(frames_dir: str, threshold: float = 0.4, fps: int = 1) ->
 
 
 def upload_frames_to_gcs(frames_dir: str, candidates: list, bucket_name: str, video_id: str) -> list:
-    client = storage.Client()
+    from gweebler_modal import get_gcs_client
+    client = get_gcs_client()
     bucket = client.bucket(bucket_name)
     for c in candidates:
         for key in ["before_frame", "after_frame"]:
@@ -99,7 +100,8 @@ def upload_frames_to_gcs(frames_dir: str, candidates: list, bucket_name: str, vi
 
 
 def upload_json(data, bucket_name: str, gcs_path: str) -> None:
-    client = storage.Client()
+    from gweebler_modal import get_gcs_client
+    client = get_gcs_client()
     bucket = client.bucket(bucket_name)
     blob = bucket.blob(gcs_path)
     blob.upload_from_string(json.dumps(data, indent=2), content_type="application/json")

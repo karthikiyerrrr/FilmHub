@@ -66,7 +66,8 @@ def run(video_url: str, video_id: str, filename: str, segments: list, bucket_nam
         download_video(video_url, video_path)
         cut_video(video_path, segments, output_path)
         gcs_path = f"output/{video_id}/clean_{filename}"
-        client = storage.Client()
+        from gweebler_modal import get_gcs_client
+        client = get_gcs_client()
         bucket = client.bucket(bucket_name)
         blob = bucket.blob(gcs_path)
         blob.upload_from_filename(output_path)
