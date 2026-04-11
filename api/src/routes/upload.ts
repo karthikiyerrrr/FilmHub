@@ -19,8 +19,10 @@ router.post('/upload/sign', async (req: AuthRequest, res) => {
   const gcsPath = `videos/${videoId}/${filename}`
   const file = bucket.file(gcsPath)
 
+  const origin = req.headers.origin || 'https://gweebler.web.app'
   const [uploadUrl] = await file.createResumableUpload({
     metadata: { contentType },
+    origin,
   })
 
   const db = admin.firestore()
