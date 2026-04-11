@@ -53,17 +53,6 @@ const tools: Anthropic.Tool[] = [
     },
   },
   {
-    name: 'read_gcs_file',
-    description: 'Read a JSON file from cloud storage. Use this to read the actual detection results after each pass completes (e.g., transcript.json, music.json, graphics_candidates.json).',
-    input_schema: {
-      type: 'object' as const,
-      properties: {
-        path: { type: 'string', description: 'GCS path relative to the analysis folder, e.g., "transcript.json" or "music.json"' },
-      },
-      required: ['path'],
-    },
-  },
-  {
     name: 'update_progress',
     description: 'Update the analysis job progress visible to the user in real-time.',
     input_schema: {
@@ -139,17 +128,6 @@ async function handleToolCall(
       await updateFirestoreProgress(ctx.jobId, { message: 'Promotion detection complete', completedPasses })
       return JSON.stringify({ status: 'completed', note: 'Promotions analyzed from transcript' })
     }
-    case 'read_gcs_file': {
-      const path = toolInput.path as string
-      const gcsPath = `analysis/${ctx.videoId}/${path}`
-      const file = bucket.file(gcsPath)
-      try {
-        const [content] = await file.download()
-        return content.toString()
-      } catch {
-        return JSON.stringify({ error: `File not found: ${gcsPath}` })
-      }
-    }
     case 'update_progress': {
       const msg = toolInput.message as string
       await updateFirestoreProgress(ctx.jobId, { message: msg })
@@ -212,12 +190,7 @@ IMPORTANT format rules for suggested_segments:
 - "types" is an ARRAY of strings, not a single string. Valid values: "music", "graphics", "promotions"
 - "accepted" must be true (boolean)
 - "start" and "end" are numbers in seconds
-
-CRITICAL: After each detection pass completes, use read_gcs_file to read the ACTUAL results:
-- After transcription: read_gcs_file("transcript.json")
-- After music detection: read_gcs_file("music.json")
-- After graphics detection: read_gcs_file("graphics_candidates.json")
-Use the REAL data from these files to populate the review_data.json. Do NOT fabricate or hallucinate data. The transcript, music, graphics, and promotions fields in review_data.json must contain the actual detection results, not made-up content.
+- Include the raw detection data in the top-level music/graphics/transcript/promotions fields by reading them from GCS after each pass completes
 
 Video URL: ${ctx.videoUrl}
 Video ID: ${ctx.videoId}`
