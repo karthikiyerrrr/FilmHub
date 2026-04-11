@@ -164,9 +164,33 @@ Use the tools provided to run each pass. The video URL is already provided to ea
 Rules:
 - Run transcription first if "transcribe" is in the passes, since "promotions" detection requires the transcript.
 - For "promotions" detection: first read the transcript from GCS (it was saved by run_transcription), then use detect_promotions with the transcript text to identify paid promotion segments. Analyze the transcript yourself to find sponsorship mentions, ad reads, and promotional content. Return the segments you find.
-- After all requested passes complete, assemble a review_data.json using save_results. The review_data should contain: video info, and a "suggested_segments" array combining all detected segments with appropriate types.
+- After all requested passes complete, assemble a review_data.json using save_results with type "review_data".
 - Update progress after each step so the user can see what's happening.
 - If a pass fails, continue with remaining passes and report the error.
+
+CRITICAL: The review_data.json MUST use this exact JSON structure:
+{
+  "video": { "filename": "<original filename>", "path": "" },
+  "music": [{"start": 0, "end": 10, "track": "Artist - Title" or null}] or null,
+  "graphics": [{"frame_index": 0, "timestamp": 0, "time_formatted": "0:00:00", "correlation": 0.3, "before_frame": "", "after_frame": ""}] or null,
+  "transcript": {"segments": [{"id": 0, "start": 0, "end": 1, "text": "..."}]} or null,
+  "promotions": [{"start": 0, "end": 10, "description": "..."}] or null,
+  "suggested_segments": [
+    {
+      "start": 0,
+      "end": 10,
+      "types": ["music", "graphics", "promotions"],
+      "description": "Description of what was detected",
+      "accepted": true
+    }
+  ]
+}
+
+IMPORTANT format rules for suggested_segments:
+- "types" is an ARRAY of strings, not a single string. Valid values: "music", "graphics", "promotions"
+- "accepted" must be true (boolean)
+- "start" and "end" are numbers in seconds
+- Include the raw detection data in the top-level music/graphics/transcript/promotions fields by reading them from GCS after each pass completes
 
 Video URL: ${ctx.videoUrl}
 Video ID: ${ctx.videoId}`
