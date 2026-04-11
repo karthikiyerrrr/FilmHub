@@ -19,10 +19,12 @@ def extract_audio(video_path: str, audio_path: str) -> None:
 
 
 def separate_music(audio_path: str, output_dir: str, model_name: str = "htdemucs") -> str:
+    env = {**os.environ, "TORCHAUDIO_USE_BACKEND_DISPATCHER": "1"}
     result = subprocess.run(
         ["python", "-m", "demucs", "-n", model_name, "--two-stems", "vocals",
+         "--filename", "{track}/{stem}.wav",
          "-o", output_dir, audio_path],
-        capture_output=True, text=True,
+        capture_output=True, text=True, env=env,
     )
     if result.returncode != 0:
         raise RuntimeError(f"Demucs failed:\nstdout: {result.stdout}\nstderr: {result.stderr}")

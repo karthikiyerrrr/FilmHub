@@ -17,7 +17,8 @@ whisper_image = (
 demucs_image = (
     modal.Image.from_registry("nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04", add_python="3.11")
     .apt_install("ffmpeg")
-    .pip_install("google-cloud-storage", "fastapi[standard]", "demucs", "librosa", "pyacoustid", "torchcodec")
+    .pip_install("google-cloud-storage", "fastapi[standard]", "demucs", "librosa", "pyacoustid", "soundfile")
+    .env({"TORCHAUDIO_USE_BACKEND_DISPATCHER": "1"})
     .add_local_python_source("gweebler_modal")
 )
 graphics_image = base_image.pip_install("opencv-python-headless", "numpy").add_local_python_source("gweebler_modal")
