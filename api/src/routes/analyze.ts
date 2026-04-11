@@ -52,30 +52,12 @@ router.post('/analyze/:videoId', async (req: AuthRequest, res) => {
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
   })
 
-  // In dev mode, call worker directly
-  if (WORKER_SERVICE_URL.includes('localhost')) {
-    fetch(`${WORKER_SERVICE_URL}/run-analysis`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ jobId, videoId, passes, gcsVideoPath }),
-    }).catch((err) => console.error('Worker call failed:', err))
-  } else {
-    const queuePath = tasksClient.queuePath(GCP_PROJECT, CLOUD_TASKS_LOCATION, CLOUD_TASKS_QUEUE)
-    await tasksClient.createTask({
-      parent: queuePath,
-      task: {
-        httpRequest: {
-          httpMethod: 'POST',
-          url: `${WORKER_SERVICE_URL}/run-analysis`,
-          headers: { 'Content-Type': 'application/json' },
-          body: Buffer.from(JSON.stringify({ jobId, videoId, passes, gcsVideoPath })).toString('base64'),
-          oidcToken: {
-            serviceAccountEmail: `${GCP_PROJECT}@appspot.gserviceaccount.com`,
-          },
-        },
-      },
-    })
-  }
+  // Call worker directly (Cloud Tasks can be added later for production hardening)
+  fetch(`${WORKER_SERVICE_URL}/run-analysis`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jobId, videoId, passes, gcsVideoPath }),
+  }).catch((err) => console.error('Worker call failed:', err))
 
   res.json({ jobId })
 })
