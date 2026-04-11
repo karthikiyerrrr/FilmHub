@@ -4,9 +4,6 @@ import admin from 'firebase-admin'
 import path from 'path'
 import fs from 'fs'
 import os from 'os'
-import { fileURLToPath } from 'url'
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const storage = new Storage()
 
@@ -61,7 +58,7 @@ ANALYSIS_DIR: ${analysisDir}`
       prompt,
       options: {
         cwd: projectRoot,
-        pathToClaudeCodeExecutable: path.resolve(__dirname, '../node_modules/@anthropic-ai/claude-agent-sdk/cli.js'),
+        pathToClaudeCodeExecutable: '/app/node_modules/@anthropic-ai/claude-agent-sdk/cli.js',
         settingSources: ['project'],
         allowedTools: ['Skill', 'Read', 'Write', 'Bash', 'Glob', 'Grep'],
         permissionMode: 'bypassPermissions',
