@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { getUploadUrl } from '../api'
+import { getUploadUrl, triggerTranscode } from '../api'
 
 interface Props {
   onUploadComplete: () => void
@@ -15,7 +15,7 @@ export function UploadZone({ onUploadComplete }: Props) {
     setUploading(true)
     setProgress(0)
     try {
-      const { uploadUrl } = await getUploadUrl(file.name, file.type)
+      const { videoId, uploadUrl } = await getUploadUrl(file.name, file.type)
 
       const xhr = new XMLHttpRequest()
       xhr.open('PUT', uploadUrl)
@@ -32,6 +32,11 @@ export function UploadZone({ onUploadComplete }: Props) {
         xhr.onerror = () => reject(new Error('Upload failed'))
         xhr.send(file)
       })
+
+      // Trigger transcode in background (don't await — it takes a while)
+      triggerTranscode(videoId).catch((err) =>
+        console.error('Transcode trigger failed:', err)
+      )
 
       onUploadComplete()
     } catch (err) {

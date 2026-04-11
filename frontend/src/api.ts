@@ -73,3 +73,9 @@ export async function triggerCut(videoId: string, segmentsFile: string): Promise
 export async function getCutStatus(videoId: string): Promise<{ status: string; downloadUrl?: string; error?: string }> {
   return apiFetch(`/api/cut/${videoId}/status`)
 }
+
+export async function triggerTranscode(videoId: string): Promise<{ status: string }> {
+  return apiFetch(`/api/videos/${videoId}/transcode`, {
+    method: 'POST',
+  })
+}
