@@ -14,7 +14,6 @@ RUN npm ci
 COPY tsconfig.json ./
 COPY src/ src/
 RUN npx tsc
-RUN npm prune --production
 
 # Copy skill files (placed here by the deploy script)
 COPY .claude/ .claude/
