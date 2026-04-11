@@ -1,6 +1,10 @@
+import pathlib
 import modal
 
 app = modal.App("gweebler")
+
+# Mount the gweebler_modal package into each container
+local_package = modal.Mount.from_local_python_packages("gweebler_modal")
 
 base_image = (
     modal.Image.debian_slim(python_version="3.11")
@@ -18,6 +22,7 @@ graphics_image = base_image.pip_install("opencv-python-headless", "numpy")
     gpu="A10G",
     timeout=900,
     secrets=[modal.Secret.from_name("gweebler")],
+    mounts=[local_package],
 )
 @modal.fastapi_endpoint(method="POST")
 def transcribe(item: dict) -> dict:
@@ -35,6 +40,7 @@ def transcribe(item: dict) -> dict:
     gpu="A10G",
     timeout=900,
     secrets=[modal.Secret.from_name("gweebler")],
+    mounts=[local_package],
 )
 @modal.fastapi_endpoint(method="POST")
 def detect_music(item: dict) -> dict:
@@ -50,6 +56,7 @@ def detect_music(item: dict) -> dict:
     image=graphics_image,
     timeout=600,
     secrets=[modal.Secret.from_name("gweebler")],
+    mounts=[local_package],
 )
 @modal.fastapi_endpoint(method="POST")
 def detect_graphics(item: dict) -> dict:
@@ -66,6 +73,7 @@ def detect_graphics(item: dict) -> dict:
     image=base_image,
     timeout=900,
     secrets=[modal.Secret.from_name("gweebler")],
+    mounts=[local_package],
 )
 @modal.fastapi_endpoint(method="POST")
 def cut_video(item: dict) -> dict:
