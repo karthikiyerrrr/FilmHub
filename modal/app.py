@@ -22,6 +22,7 @@ demucs_image = (
 )
 graphics_image = base_image.pip_install("opencv-python-headless", "numpy").add_local_python_source("gweebler_modal")
 cut_image = base_image.add_local_python_source("gweebler_modal")
+transcode_image = base_image.add_local_python_source("gweebler_modal")
 
 
 @app.function(
@@ -86,5 +87,20 @@ def cut_video(item: dict) -> dict:
         video_id=item["video_id"],
         filename=item["filename"],
         segments=item["segments"],
+        bucket_name=item.get("bucket", "gweebler.firebasestorage.app"),
+    )
+
+
+@app.function(
+    image=transcode_image,
+    timeout=900,
+    secrets=[modal.Secret.from_name("gweebler")],
+)
+@modal.fastapi_endpoint(method="POST")
+def transcode_video(item: dict) -> dict:
+    from gweebler_modal.transcode import run
+    return run(
+        video_url=item["video_url"],
+        video_id=item["video_id"],
         bucket_name=item.get("bucket", "gweebler.firebasestorage.app"),
     )
