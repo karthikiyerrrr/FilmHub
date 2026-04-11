@@ -33,7 +33,9 @@ router.get('/videos/:videoId/url', async (req: AuthRequest, res) => {
     return
   }
 
-  const gcsPath = doc.data()!.gcsPath as string
+  // Prefer transcoded preview if available
+  const previewGcsPath = doc.data()!.previewGcsPath as string | undefined
+  const gcsPath = previewGcsPath || (doc.data()!.gcsPath as string)
   const file = bucket.file(gcsPath)
 
   const [signedUrl] = await file.getSignedUrl({
@@ -41,7 +43,7 @@ router.get('/videos/:videoId/url', async (req: AuthRequest, res) => {
     expires: Date.now() + 60 * 60 * 1000,
   })
 
-  res.json({ url: signedUrl })
+  res.json({ url: signedUrl, isPreview: !!previewGcsPath })
 })
 
 export default router
