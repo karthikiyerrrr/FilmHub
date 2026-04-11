@@ -19,11 +19,13 @@ def extract_audio(video_path: str, audio_path: str) -> None:
 
 
 def separate_music(audio_path: str, output_dir: str, model_name: str = "htdemucs") -> str:
-    subprocess.run(
+    result = subprocess.run(
         ["python", "-m", "demucs", "-n", model_name, "--two-stems", "vocals",
          "-o", output_dir, audio_path],
-        check=True, capture_output=True,
+        capture_output=True, text=True,
     )
+    if result.returncode != 0:
+        raise RuntimeError(f"Demucs failed:\nstdout: {result.stdout}\nstderr: {result.stderr}")
     stem_name = os.path.splitext(os.path.basename(audio_path))[0]
     return os.path.join(output_dir, model_name, stem_name, "no_vocals.wav")
 
