@@ -1,7 +1,7 @@
 import express from 'express'
 import admin from 'firebase-admin'
 import { Storage } from '@google-cloud/storage'
-import { runAnalysis } from './agent.js'
+import { runAnalysis } from './pipeline.js'
 
 admin.initializeApp({
   credential: admin.credential.applicationDefault(),
@@ -42,23 +42,23 @@ app.post('/run-analysis', async (req, res) => {
     return
   }
 
-  // Run analysis and keep request open until complete
-  // (Cloud Run terminates containers after response is sent)
+  // Run analysis and wait for completion.
+  // Cloud Run keeps the container alive as long as the request is open.
+  // The API service uses fire-and-forget (fetch without await), so this
+  // doesn't block the API response to the frontend.
   try {
-    console.log(`Starting analysis for job ${jobId}...`)
     await runAnalysis({
       jobId,
       videoId,
       videoUrl,
-      videoFilename: videoFilename || gcsVideoPath.split('/').pop() || 'video.mp4',
+      videoFilename: videoFilename || '',
       passes,
       bucketName: process.env.GCS_BUCKET || '',
     })
-    console.log(`Analysis completed for job ${jobId}`)
-    res.json({ status: 'completed' })
+    res.json({ status: 'completed', jobId })
   } catch (err) {
     console.error(`Analysis failed for job ${jobId}:`, err)
-    res.status(500).json({ status: 'failed', error: String(err) })
+    res.json({ status: 'failed', jobId })
   }
 })
 
