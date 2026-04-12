@@ -109,7 +109,7 @@ export async function runAnalysis(ctx: JobContext): Promise<void> {
 
     if (graphics && Array.isArray(graphics)) {
       const candidates = graphics as GraphicsCandidate[]
-      // Download frames in batches of 10 to avoid overwhelming GCS
+      // Download frame pairs sequentially to keep memory bounded
       for (let i = 0; i < candidates.length; i++) {
         const c = candidates[i]
         try {
@@ -171,7 +171,11 @@ export async function runAnalysis(ctx: JobContext): Promise<void> {
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error)
     console.error(`Analysis failed for job ${ctx.jobId}:`, errorMsg)
-    await markJobFailed(ctx.jobId, errorMsg)
-    await updateVideoStatus(ctx.videoId, 'uploaded')
+    try {
+      await markJobFailed(ctx.jobId, errorMsg)
+      await updateVideoStatus(ctx.videoId, 'uploaded')
+    } catch (firestoreErr) {
+      console.error(`Failed to update Firestore after error:`, firestoreErr)
+    }
   }
 }
