@@ -23,6 +23,19 @@ reviewer/target/
 reviewer/frontend/node_modules/
 reviewer/frontend/dist/
 
+# Firebase cache
+.firebase/
+
 # OS
 .DS_Store
 Thumbs.db
+service-account.json
+
+# Gweebler runtime
+frontend/.env.local
+api/.env.local
+worker/.env.local
+frontend/dist/
+api/dist/
+worker/dist/
+node_modules/
