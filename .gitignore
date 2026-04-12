@@ -23,6 +23,9 @@ reviewer/target/
 reviewer/frontend/node_modules/
 reviewer/frontend/dist/
 
+# Firebase cache
+.firebase/
+
 # OS
 .DS_Store
 Thumbs.db
